@@ -1,13 +1,9 @@
 class_name BoardView
 extends Node2D
-## Draws a GameSession's board and active piece with procedural rectangles.
+## Draws a GameSession's board and active piece with procedural rectangles and
+## the shared RetroDraw tiles.
 ## Read-only view of game state; hidden rows are not drawn.
 
-const BACKGROUND_COLOR := Color(0.08, 0.08, 0.11)
-const GRID_COLOR := Color(1, 1, 1, 0.07)
-const BLOCK_INSET: float = 1.0
-const GHOST_FILL_ALPHA: float = 0.18
-const GHOST_OUTLINE_ALPHA: float = 0.6
 const LINE_CLEAR_FLASH_SECONDS: float = 0.2
 const LINE_CLEAR_FLASH_COLOR := Color(1, 1, 1, 0.6)
 const HARD_DROP_TRAIL_SECONDS: float = 0.15
@@ -93,11 +89,12 @@ func board_pixel_size() -> Vector2:
 
 func _draw() -> void:
 	var size := board_pixel_size()
-	draw_rect(Rect2(Vector2.ZERO, size), BACKGROUND_COLOR)
-	for x in range(Board.WIDTH + 1):
-		draw_line(Vector2(x * cell_size, 0), Vector2(x * cell_size, size.y), GRID_COLOR)
-	for y in range(Board.VISIBLE_ROWS + 1):
-		draw_line(Vector2(0, y * cell_size), Vector2(size.x, y * cell_size), GRID_COLOR)
+	RetroDraw.draw_panel(self, Rect2(Vector2.ZERO, size).grow(RetroDraw.FRAME))
+	draw_rect(Rect2(Vector2.ZERO, size), RetroDraw.BACKGROUND)
+	for x in range(1, Board.WIDTH):
+		draw_rect(Rect2(x * cell_size, 0, 1, size.y), RetroDraw.GRID)
+	for y in range(1, Board.VISIBLE_ROWS):
+		draw_rect(Rect2(0, y * cell_size, size.x, 1), RetroDraw.GRID)
 	if _session == null:
 		return
 	for y in range(Board.HIDDEN_ROWS, Board.TOTAL_ROWS):
@@ -117,11 +114,12 @@ func _draw() -> void:
 
 
 func _draw_block(x: int, y: int, type: int) -> void:
-	if not _session.board.is_visible_row(y):
-		return
-	var pos := Vector2(x, y - Board.HIDDEN_ROWS) * cell_size
-	var rect := Rect2(pos, Vector2(cell_size, cell_size)).grow(-BLOCK_INSET)
-	draw_rect(rect, PIECE_COLORS[type])
+	if _session.board.is_visible_row(y):
+		RetroDraw.draw_tile(self, _cell_rect(x, y), PIECE_COLORS[type])
+
+
+func _cell_rect(x: int, y: int) -> Rect2:
+	return Rect2(Vector2(x, y - Board.HIDDEN_ROWS) * cell_size, Vector2(cell_size, cell_size))
 
 
 func _draw_effects() -> void:
@@ -144,10 +142,5 @@ func toggle_ghost() -> void:
 
 
 func _draw_ghost_block(x: int, y: int, type: int) -> void:
-	if not _session.board.is_visible_row(y):
-		return
-	var pos := Vector2(x, y - Board.HIDDEN_ROWS) * cell_size
-	var rect := Rect2(pos, Vector2(cell_size, cell_size)).grow(-BLOCK_INSET)
-	var color: Color = PIECE_COLORS[type]
-	draw_rect(rect, Color(color, GHOST_FILL_ALPHA))
-	draw_rect(rect, Color(color, GHOST_OUTLINE_ALPHA), false, 2.0)
+	if _session.board.is_visible_row(y):
+		RetroDraw.draw_ghost(self, _cell_rect(x, y), PIECE_COLORS[type])

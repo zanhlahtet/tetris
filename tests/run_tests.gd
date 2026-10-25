@@ -2,12 +2,13 @@ extends SceneTree
 ## Headless test runner. Discovers tests/test_*.gd, runs every method named
 ## test_*, and exits non-zero on failure.
 ##   godot --headless --path . --script res://tests/run_tests.gd
+## Test methods may `await t.process_frame`; the node tree is `t.root`.
 
 var _failures: int = 0
 var _checks: int = 0
 
 
-func _init() -> void:
+func _initialize() -> void:
 	var tests: int = 0
 	for file in _test_files():
 		var script := load("res://tests/" + file) as GDScript
@@ -21,7 +22,8 @@ func _init() -> void:
 			if name.begins_with("test_"):
 				tests += 1
 				print("  ", file.get_basename(), ".", name)
-				suite.call(name)
+				# Tests may await frames (e.g. to run real _draw callbacks).
+				await suite.call(name)
 	print("%d tests, %d checks, %d failures" % [tests, _checks, _failures])
 	quit(1 if _failures > 0 else 0)
 

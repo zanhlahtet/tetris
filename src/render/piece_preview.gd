@@ -5,8 +5,7 @@ extends Node2D
 
 enum Source { NEXT, HOLD }
 
-const PANEL_PADDING: float = 4.0
-const PANEL_COLOR := Color(1, 1, 1, 0.04)
+const PANEL_PADDING: float = 5.0
 const HOLD_USED_ALPHA: float = 0.35
 
 @export var source: Source = Source.NEXT
@@ -34,7 +33,7 @@ func _slot_size() -> Vector2:
 func _draw() -> void:
 	var slots: int = GameSession.PREVIEW_COUNT if source == Source.NEXT else 1
 	var panel := Rect2(Vector2.ZERO, Vector2(_slot_size().x, _slot_size().y * slots)).grow(PANEL_PADDING)
-	draw_rect(panel, PANEL_COLOR)
+	RetroDraw.draw_panel(self, panel)
 	if _session == null:
 		return
 	if source == Source.HOLD:
@@ -56,7 +55,7 @@ func _draw_piece(type: int, slot: int, alpha: float) -> void:
 	var extent := Vector2(max_c - min_c + Vector2i.ONE) * cell_size
 	var slot_origin := Vector2(0, slot * _slot_size().y)
 	var offset := slot_origin + (_slot_size() - extent) / 2.0
-	var color := Color(BoardView.PIECE_COLORS[type], alpha)
+	var color: Color = BoardView.PIECE_COLORS[type]
 	for c in cells:
-		var rect := Rect2(offset + Vector2(c - min_c) * cell_size, Vector2(cell_size, cell_size)).grow(-1.0)
-		draw_rect(rect, color)
+		var rect := Rect2((offset + Vector2(c - min_c) * cell_size).floor(), Vector2(cell_size, cell_size))
+		RetroDraw.draw_tile(self, rect, color, alpha)

@@ -61,9 +61,10 @@ Input Map actions in `project.godot`: `move_left` (Left), `move_right`
 
 The on-screen controller (bottom of the screen) presses the same actions: a
 D-pad on the left (left, right, down = soft drop; the up arm is decoration),
-round CCW (lower-left) and CW (upper-right) buttons on the right, and HOLD
-above a larger DROP (hard drop) pill in the middle; PAUSE is a small pill
-beside the next queue. Holding LEFT/RIGHT uses the normal DAS/ARR. Multiple
+round X (counter-clockwise, lower-left) and O (clockwise, upper-right) buttons
+on the right, and a PAUSE pill between them. Hold and hard drop have no touch
+control (and the hold slot is hidden on phones); they remain keyboard actions.
+Holding LEFT/RIGHT uses the normal DAS/ARR. Multiple
 fingers work at once, and a finger can slide between LEFT, RIGHT and SOFT.
 Gestures are not implemented. The ghost toggle is keyboard-only.
 

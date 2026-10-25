@@ -25,6 +25,13 @@ window/size/window_height_override=640
 window/stretch/mode="canvas_items"
 window/handheld/orientation=1
 
+[gui]
+
+theme/custom_font="res://assets/fonts/PixelifySans.ttf"
+theme/default_font_antialiasing=0
+theme/default_font_hinting=0
+theme/default_font_subpixel_positioning=0
+
 [input]
 
 move_left={

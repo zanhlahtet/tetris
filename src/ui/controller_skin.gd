@@ -1,7 +1,7 @@
 class_name ControllerSkin
 extends RefCounted
 ## Procedural retro-console look for the touch controls: a warm gray body,
-## charcoal D-pad, round purple face buttons and pill buttons. Pure drawing
+## charcoal D-pad, round purple face buttons and a pill button. Pure drawing
 ## helpers with no input or game knowledge; every draw call takes the
 ## CanvasItem to paint on, and a `pressed` flag for the physical "pushed in"
 ## state. Not affiliated with any console maker; the shapes are generic.
@@ -15,8 +15,6 @@ const DPAD_LIGHT := Color("57575f")
 const DPAD_MARK := Color("6d6d77")
 const FACE_CCW := Color("b9a4ec")
 const FACE_CW := Color("7a58c2")
-const PILL_HOLD := Color("a9a2c4")
-const PILL_DROP := Color("8660d0")
 const PILL_PAUSE := Color("b4aea3")
 const LABEL_DARK := Color("2b2833")
 const LABEL_LIGHT := Color("f4f0ff")
@@ -90,7 +88,7 @@ static func draw_round_button(ci: CanvasItem, rect: Rect2, color: Color, label: 
 	ci.draw_circle(center, radius - 3.0, _fade(face, alpha))
 	if not pressed:
 		ci.draw_arc(center, radius - 5.0, deg_to_rad(200), deg_to_rad(290), 16, _fade(face.lightened(0.45), alpha), 3.0)
-	_draw_label(ci, center, label, int(radius * 0.5), LABEL_DARK if color.get_luminance() > 0.5 else LABEL_LIGHT, alpha)
+	_draw_label(ci, center, label, int(radius * 0.95), LABEL_DARK if color.get_luminance() > 0.5 else LABEL_LIGHT, alpha)
 
 
 static func draw_pill(ci: CanvasItem, rect: Rect2, color: Color, label: String, pressed: bool, alpha: float = 1.0) -> void:
@@ -106,7 +104,7 @@ static func draw_pill(ci: CanvasItem, rect: Rect2, color: Color, label: String, 
 	ci.draw_style_box(box, r)
 	if not pressed:
 		ci.draw_line(r.position + Vector2(r.size.y / 2.0, 6), Vector2(r.end.x - r.size.y / 2.0, r.position.y + 6), _fade(face.lightened(0.45), alpha), 2.0)
-	_draw_label(ci, r.get_center(), label, clampi(int(rect.size.y * 0.36), 14, 36), LABEL_DARK if color.get_luminance() > 0.5 else LABEL_LIGHT, alpha)
+	_draw_label(ci, r.get_center(), label, clampi(int(rect.size.y * 0.5), 14, 36), LABEL_DARK if color.get_luminance() > 0.5 else LABEL_LIGHT, alpha)
 
 
 static func _pill_box(color: Color, alpha: float, height: float) -> StyleBoxFlat:
@@ -117,7 +115,7 @@ static func _pill_box(color: Color, alpha: float, height: float) -> StyleBoxFlat
 
 
 static func _draw_label(ci: CanvasItem, center: Vector2, text: String, font_size: int, color: Color, alpha: float) -> void:
-	var font := ThemeDB.fallback_font
+	var font: Font = RetroFont.bold()
 	var size: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	var baseline := Vector2(center.x - size.x / 2.0, center.y + font.get_ascent(font_size) / 2.0 - font.get_descent(font_size) / 2.0)
 	ci.draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, _fade(color, alpha))

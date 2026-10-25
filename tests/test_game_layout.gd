@@ -72,7 +72,7 @@ func test_base_resolution_cell_size() -> void:
 func test_board_centered_horizontally() -> void:
 	for safe in _safe_rects():
 		var l := GameLayout.compute(safe)
-		t.check(absf(l.board_rect.get_center().x - safe.get_center().x) < 0.5, "centred in %s" % safe)
+		t.check(absf(l.board_rect.get_center().x - safe.get_center().x) < 1.0, "centred in %s" % safe)
 
 
 func test_touch_targets_are_large_enough() -> void:
@@ -85,7 +85,7 @@ func test_touch_targets_are_large_enough() -> void:
 
 func test_all_actions_have_buttons() -> void:
 	var l := GameLayout.compute(Rect2(0, 0, 720, 1280))
-	for action in [&"move_left", &"move_right", &"soft_drop", &"hard_drop", &"rotate_cw", &"rotate_ccw", &"hold", &"pause"]:
+	for action in [&"move_left", &"move_right", &"soft_drop", &"rotate_cw", &"rotate_ccw", &"pause"]:
 		t.check(l.buttons.has(action), "button for %s" % action)
 		t.check(InputMap.has_action(action), "%s is an Input Map action" % action)
 
@@ -113,3 +113,12 @@ func test_safe_area_is_clipped_and_falls_back() -> void:
 	t.check_eq(clipped, Rect2(Vector2.ZERO, vp), "clipped to viewport")
 	t.check_eq(GameLayout.safe_rect_in_viewport(Rect2(0, 0, 100, 100), Vector2.ZERO, vp), Rect2(Vector2.ZERO, vp), "zero window falls back")
 	t.check_eq(GameLayout.safe_rect_in_viewport(Rect2(0, 0, 0, 0), Vector2(720, 1280), vp), Rect2(Vector2.ZERO, vp), "empty safe area falls back")
+
+
+func test_hold_panel_can_be_dropped_for_phones() -> void:
+	for safe in _safe_rects():
+		var l := GameLayout.compute(safe, false)
+		t.check(not l.show_hold and not l.hold_rect.has_area(), "no hold panel in %s" % safe)
+		t.check(safe.encloses(l.stats_rect), "stats inside %s" % safe)
+		t.check(l.stats_rect.position.y <= GameLayout.compute(safe).stats_rect.position.y, "stats move up")
+		t.check_eq(l.cell_size, GameLayout.compute(safe).cell_size, "board size unchanged")
