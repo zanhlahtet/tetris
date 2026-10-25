@@ -46,3 +46,15 @@ func test_set_get_clear() -> void:
 	t.check(not b.is_empty(3, 25), "occupied")
 	b.clear()
 	t.check(b.is_empty(3, 25), "cleared")
+
+
+func test_can_place_collisions() -> void:
+	var b := Board.new()
+	t.check(b.can_place([Vector2i(0, 39), Vector2i(9, 39)] as Array[Vector2i]), "corners free")
+	t.check(not b.can_place([Vector2i(-1, 30)] as Array[Vector2i]), "left wall")
+	t.check(not b.can_place([Vector2i(10, 30)] as Array[Vector2i]), "right wall")
+	t.check(not b.can_place([Vector2i(5, 40)] as Array[Vector2i]), "floor")
+	t.check(not b.can_place([Vector2i(5, -1)] as Array[Vector2i]), "ceiling")
+	b.set_cell(4, 30, 3)
+	t.check(not b.can_place([Vector2i(3, 30), Vector2i(4, 30)] as Array[Vector2i]), "locked cell")
+	t.check(b.can_place([Vector2i(3, 30), Vector2i(5, 30)] as Array[Vector2i]), "neighbours free")
