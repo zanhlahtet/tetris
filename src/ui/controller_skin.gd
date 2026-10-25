@@ -18,9 +18,11 @@ const FACE_CW := Color("7a58c2")
 const PILL_PAUSE := Color("b4aea3")
 const LABEL_DARK := Color("2b2833")
 const LABEL_LIGHT := Color("f4f0ff")
+const DPAD_ACTIVE := Color("d9ccff")
+const RIM_LIGHT := Color(1, 1, 1, 0.6)
 const SHADOW := Color(0, 0, 0, 0.35)
 ## How far a pressed control sinks, and how far its shadow falls, in pixels.
-const DEPTH: float = 4.0
+const DEPTH: float = 5.0
 const DISABLED_ALPHA: float = 0.5
 
 
@@ -68,11 +70,16 @@ static func draw_dpad(ci: CanvasItem, box: Rect2, left: bool, right: bool, down:
 	for arm: Array in arms:
 		var rect: Rect2 = arm[0]
 		var sink := Vector2.ZERO
+		var mark: Color = DPAD_MARK
 		if arm[1]:
-			sink = Vector2(0, 2)
-			ci.draw_rect(rect.grow(-3), _fade(DPAD_PRESSED, alpha))
-			ci.draw_line(rect.position + Vector2(3, 3), Vector2(rect.end.x - 3, rect.position.y + 3), _fade(Color.BLACK, alpha), 3.0)
-		_draw_arrow(ci, rect.get_center() + sink, arm[2], t * 0.2, _fade(DPAD_MARK if not arm[1] else DPAD_LIGHT, alpha))
+			# Pushed in: recessed dark well with a deep top shadow, a bright rim
+			# and a lit arrow so the active direction is obvious at a glance.
+			sink = Vector2(0, 3)
+			ci.draw_rect(rect.grow(-3), _fade(DPAD_PRESSED.darkened(0.4), alpha))
+			ci.draw_rect(Rect2(rect.position + Vector2(3, 3), Vector2(rect.size.x - 6, 6)), _fade(Color.BLACK, alpha))
+			ci.draw_rect(rect.grow(-3), _fade(FACE_CW.lightened(0.3), alpha), false, 2.0)
+			mark = DPAD_ACTIVE
+		_draw_arrow(ci, rect.get_center() + sink, arm[2], t * 0.22, _fade(mark, alpha))
 	ci.draw_circle(box.get_center(), t * 0.16, _fade(DPAD_PRESSED, alpha))
 
 
@@ -83,10 +90,14 @@ static func draw_round_button(ci: CanvasItem, rect: Rect2, color: Color, label: 
 		center.y += DEPTH
 	else:
 		ci.draw_circle(center + Vector2(0, DEPTH), radius, _fade(SHADOW, alpha))
-	var face: Color = color.darkened(0.25) if pressed else color
-	ci.draw_circle(center, radius, _fade(face.darkened(0.35), alpha))
+	var face: Color = color.darkened(0.4) if pressed else color
+	ci.draw_circle(center, radius, _fade(face.darkened(0.45), alpha))
 	ci.draw_circle(center, radius - 3.0, _fade(face, alpha))
-	if not pressed:
+	if pressed:
+		# Recessed: a dark crescent inside the upper rim and a light outer ring.
+		ci.draw_arc(center, radius - 6.0, deg_to_rad(180), deg_to_rad(360), 20, _fade(face.darkened(0.55), alpha), 6.0)
+		ci.draw_arc(center, radius + 1.5, 0.0, TAU, 32, _fade(RIM_LIGHT, alpha), 2.0)
+	else:
 		ci.draw_arc(center, radius - 5.0, deg_to_rad(200), deg_to_rad(290), 16, _fade(face.lightened(0.45), alpha), 3.0)
 	_draw_label(ci, center, label, int(radius * 0.95), LABEL_DARK if color.get_luminance() > 0.5 else LABEL_LIGHT, alpha)
 
@@ -97,13 +108,16 @@ static func draw_pill(ci: CanvasItem, rect: Rect2, color: Color, label: String, 
 		r.position.y += DEPTH
 	else:
 		ci.draw_style_box(_pill_box(SHADOW, alpha, rect.size.y), Rect2(rect.position + Vector2(0, DEPTH), rect.size))
-	var face: Color = color.darkened(0.2) if pressed else color
+	var face: Color = color.darkened(0.35) if pressed else color
 	var box := _pill_box(face, alpha, rect.size.y)
 	box.set_border_width_all(3)
-	box.border_color = _fade(face.darkened(0.35), alpha)
+	box.border_color = _fade(RIM_LIGHT if pressed else face.darkened(0.35), alpha)
 	ci.draw_style_box(box, r)
-	if not pressed:
-		ci.draw_line(r.position + Vector2(r.size.y / 2.0, 6), Vector2(r.end.x - r.size.y / 2.0, r.position.y + 6), _fade(face.lightened(0.45), alpha), 2.0)
+	var inset: float = r.size.y / 2.0
+	if pressed:
+		ci.draw_line(r.position + Vector2(inset, 7), Vector2(r.end.x - inset, r.position.y + 7), _fade(face.darkened(0.55), alpha), 5.0)
+	else:
+		ci.draw_line(r.position + Vector2(inset, 6), Vector2(r.end.x - inset, r.position.y + 6), _fade(face.lightened(0.45), alpha), 2.0)
 	_draw_label(ci, r.get_center(), label, clampi(int(rect.size.y * 0.5), 14, 36), LABEL_DARK if color.get_luminance() > 0.5 else LABEL_LIGHT, alpha)
 
 
