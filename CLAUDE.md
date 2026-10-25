@@ -27,6 +27,12 @@ Piece model: `Tetromino` (static SRS shape data; type value = board cell id),
 `ActivePiece` (type/rotation/origin, never stored in the Board until locked),
 `BagRandomizer` (seedable 7-bag; `GameSession.new(seed, true)` for determinism).
 
+Session simulation: `GameSession.tick(delta_ms)` takes integer milliseconds and
+is the only source of time; commands are `set_direction`, `set_soft_drop`,
+`hard_drop`. Tests drive it directly with no scene or rendering. `scenes/main.gd`
+converts frame delta to whole ms. Input is read only via Input Map actions in
+`InputHandler`.
+
 ## Conventions
 - Typed GDScript: annotate variables, parameters and returns.
 - `class_name` for shared types; snake_case files; one class per file.

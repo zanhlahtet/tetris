@@ -1,26 +1,39 @@
 class_name InputHandler
 extends Node
-## Translates device input (keyboard now, touch later) into abstract game
-## commands. Emits signals only; knows nothing about the board or session.
+## Translates Input Map actions (move_left, move_right, soft_drop, hard_drop,
+## defined in project.godot) into abstract game commands. Emits signals only;
+## knows nothing about the board or session.
 
-signal move_left
-signal move_right
-signal soft_drop
-signal hard_drop
-signal rotate_cw
-signal rotate_ccw
-signal hold
+signal direction_changed(direction: int)  ## -1, 0 or 1; latest press wins
+signal soft_drop_changed(enabled: bool)
+signal hard_drop_pressed
+
+var _left_held: bool = false
+var _right_held: bool = false
+var _direction: int = 0
 
 
-func _unhandled_key_input(event: InputEvent) -> void:
-	var key := event as InputEventKey
-	if key == null or not key.pressed:
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_echo():
 		return
-	match key.keycode:
-		KEY_LEFT: move_left.emit()
-		KEY_RIGHT: move_right.emit()
-		KEY_DOWN: soft_drop.emit()
-		KEY_SPACE: hard_drop.emit()
-		KEY_UP, KEY_X: rotate_cw.emit()
-		KEY_Z: rotate_ccw.emit()
-		KEY_C: hold.emit()
+	if event.is_action("move_left"):
+		_left_held = event.is_pressed()
+		_update_direction(-1 if _left_held else 0)
+	elif event.is_action("move_right"):
+		_right_held = event.is_pressed()
+		_update_direction(1 if _right_held else 0)
+	elif event.is_action("soft_drop"):
+		soft_drop_changed.emit(event.is_pressed())
+	elif event.is_action_pressed("hard_drop"):
+		hard_drop_pressed.emit()
+
+
+## pressed_direction is the direction just pressed, or 0 on a release; on
+## release we fall back to whichever direction is still held.
+func _update_direction(pressed_direction: int) -> void:
+	var new_direction: int = pressed_direction
+	if new_direction == 0:
+		new_direction = -1 if _left_held else (1 if _right_held else 0)
+	if new_direction != _direction:
+		_direction = new_direction
+		direction_changed.emit(_direction)
