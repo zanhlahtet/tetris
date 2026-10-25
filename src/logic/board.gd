@@ -45,3 +45,11 @@ func set_cell(x: int, y: int, value: int) -> void:
 ## True if the cell is inside the board and unoccupied.
 func is_empty(x: int, y: int) -> bool:
 	return is_inside(x, y) and _cells[y * WIDTH + x] == EMPTY
+
+
+## True if every cell is inside the board and unoccupied.
+func can_place(cells: Array[Vector2i]) -> bool:
+	for c in cells:
+		if not is_empty(c.x, c.y):
+			return false
+	return true

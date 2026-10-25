@@ -8,7 +8,9 @@ are to be finalised in the milestone that implements them.
 - 10 columns x 20 visible rows, plus 20 hidden rows above (40 total).
 - Integer grid; (0,0) is top-left of the hidden buffer, y grows downward.
   Visible rows are y = 20..39.
-- Pieces spawn in the hidden area, partly overlapping the top visible rows.
+- Pieces spawn with their lower row on the first visible row (y = 20) and their
+  upper row in the hidden buffer (y = 19). **(decision)** Spawn is checked
+  against locked cells; a blocked spawn is a top-out.
 
 ## Pieces
 - Seven tetrominoes: I, O, T, S, Z, J, L, each a fixed colour.

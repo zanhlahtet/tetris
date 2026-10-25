@@ -9,7 +9,7 @@ Strict layering; dependencies point down only.
 | Layer | Path | Responsibility |
 |---|---|---|
 | Logic | `src/logic/` | Pure gameplay and board state (`RefCounted`, no Nodes). Fully unit-testable. |
-| Session | `src/session/` | `GameSession`: owns board/piece/bag/timers/score; consumes abstract commands. |
+| Session | `src/session/` | `GameSession`: owns board, active piece, upcoming queue, bag (later timers/score); consumes abstract commands. |
 | Render | `src/render/` | Draws state with procedural rectangles. Read-only. |
 | Input | `src/input/` | Device input -> abstract command signals. No game knowledge. |
 | HUD/UI | `src/ui/` | Score, next/hold, touch controls. Reads session, never mutates the board. |
@@ -22,6 +22,10 @@ Rules:
 - No physics engine; collisions are grid lookups.
 - Base resolution 720x1280, stretch `canvas_items`, aspect `keep`.
   Board cell is 48px (`BoardView.CELL_SIZE`).
+
+Piece model: `Tetromino` (static SRS shape data; type value = board cell id),
+`ActivePiece` (type/rotation/origin, never stored in the Board until locked),
+`BagRandomizer` (seedable 7-bag; `GameSession.new(seed, true)` for determinism).
 
 ## Conventions
 - Typed GDScript: annotate variables, parameters and returns.

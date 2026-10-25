@@ -11,4 +11,5 @@ var _session: GameSession = GameSession.new()
 
 func _ready() -> void:
 	_board_view.position = BOARD_ORIGIN
-	_board_view.bind(_session.board)
+	_session.spawn_next()
+	_board_view.bind(_session)
