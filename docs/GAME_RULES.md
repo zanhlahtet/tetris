@@ -54,10 +54,20 @@ are to be finalised in the milestone that implements them.
   10 and 2 frames at 60 Hz). ARR 0 slides to the wall. Touch values **(TBD)**.
 - Holding a direction carries over to the next piece without a new DAS wait.
 
-## Controls (desktop)
+## Controls
 Input Map actions in `project.godot`: `move_left` (Left), `move_right`
 (Right), `soft_drop` (Down), `hard_drop` (Space), `rotate_cw` (Up, X),
-`rotate_ccw` (Z), `restart` (R), `hold` (C or Shift), `toggle_ghost` (G). Latest direction pressed wins.
+`rotate_ccw` (Z), `restart` (R), `hold` (C or Shift), `toggle_ghost` (G), `pause` (Esc or P). Latest direction pressed wins.
+
+Touch buttons (bottom of the screen) press the same actions: LEFT, RIGHT, SOFT
+(soft drop) on the left; CCW, CW, HOLD, DROP (hard drop) on the right; PAUSE
+beside the next queue. Holding LEFT/RIGHT uses the normal DAS/ARR. Multiple
+fingers work at once, and a finger can slide between LEFT, RIGHT and SOFT.
+Gestures are not implemented. The ghost toggle is keyboard-only.
+
+Pausing (button, Esc/P, or the app losing focus) freezes all time and input;
+a Pause overlay offers Resume and Restart, and Game Over shows the final
+score with Restart.
 
 ## Scoring (`src/logic/score_keeper.gd`)
 - Soft drop: 1 point per cell fallen while soft drop is held. Hard drop: 2
