@@ -35,11 +35,31 @@ are to be finalised in the milestone that implements them.
   can be toggled off; it has no effect on collision or gameplay.
 
 ## Gravity, locking
-- Gravity follows the Guideline curve, seconds per row =
-  `(0.8 - (level - 1) * 0.007) ^ (level - 1)`, rounded to whole milliseconds
-  (`src/logic/gravity.gd`): L1 1000, L2 793, L5 355, L10 64, L15 7 ms/row.
-  **(decision)** The curve is clamped at level 15; later levels use that speed.
-  Timing is integer milliseconds.
+- **Gravity is score-based (custom variant).** This intentionally differs from
+  the Guideline level curve. Fall speed depends only on the current run's
+  score, via one table in `src/logic/gravity.gd`. Every point source counts
+  (line clears, T-Spins, combos, soft and hard drop points). The saved high
+  score never affects it, restarting returns to 1000 ms, and since score only
+  rises within a run, the game never gets slower.
+
+  | Score from | ms per row |
+  |---|---|
+  | 0 | 1000 |
+  | 1,000 | 850 |
+  | 3,000 | 700 |
+  | 6,000 | 550 |
+  | 10,000 | 430 |
+  | 15,000 | 340 |
+  | 22,000 | 270 |
+  | 30,000 | 220 |
+  | 40,000 | 180 |
+  | 55,000 | 150 |
+  | 75,000+ | 120 (cap) |
+
+  Never faster than one row per 120 ms. When a threshold is crossed mid-fall
+  the piece keeps the same fraction of its current row, so there is no jump.
+  **LEVEL** still rises every 10 cleared lines and still multiplies line-clear
+  points, but no longer affects gravity. Timing is integer milliseconds.
 - Soft drop: **(decision)** 20x gravity while held.
 - Hard drop moves to the lowest valid position and locks immediately.
 - Lock delay: 500 ms starting when the piece lands. A successful move or

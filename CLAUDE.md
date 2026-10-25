@@ -41,7 +41,7 @@ Session simulation: `GameSession.tick(delta_ms)` takes integer milliseconds and
 is the only source of time; commands are `set_direction`, `set_soft_drop`,
 `hard_drop`, `rotate_cw`, `rotate_ccw`, `restart`, `hold`. `ghost_cells()` is a pure query used by the view. `session.stats` (`ScoreKeeper`) holds score, lines, level and the Back-to-Back/combo chains;
 `session.last_lock` is the last lock's scored result (HUD award text). `TSpin.detect`
-is the three-corner test; `ActivePiece.spun/kick_index` feed it; `Gravity` maps level to ms/row. The HUD reads them. SRS kick tables live in `Srs` (published
+is the three-corner test; `ActivePiece.spun/kick_index` feed it; `Gravity` maps the run's score to ms/row (one table, custom variant; LEVEL does not affect it). The HUD reads them. SRS kick tables live in `Srs` (published
 y-up data, returned y-down). Tests drive it directly with no scene or rendering. `scenes/main.gd`
 converts frame delta to whole ms. Input is read only via Input Map actions in
 `InputHandler`.

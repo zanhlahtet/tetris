@@ -72,18 +72,6 @@ func test_clear_scored_at_level_before_clear() -> void:
 	t.check_eq(k.register_lock(1, NONE, false).points, 200, "next clear paid at level 2")
 
 
-func test_gravity_curve() -> void:
-	t.check_eq(Gravity.interval_ms(1), 1000, "level 1")
-	t.check_eq(Gravity.interval_ms(2), 793, "level 2")
-	t.check_eq(Gravity.interval_ms(5), 355, "level 5")
-	t.check_eq(Gravity.interval_ms(10), 64, "level 10")
-	t.check_eq(Gravity.interval_ms(15), 7, "level 15")
-	for level in range(2, 16):
-		t.check(Gravity.interval_ms(level) < Gravity.interval_ms(level - 1), "level %d faster" % level)
-	t.check_eq(Gravity.interval_ms(30), Gravity.interval_ms(15), "clamped past 15")
-	t.check_eq(Gravity.interval_ms(0), 1000, "clamped below 1")
-
-
 # --- T-Spins ---------------------------------------------------------------
 
 func test_t_spin_points() -> void:
