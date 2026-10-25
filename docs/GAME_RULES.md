@@ -17,7 +17,7 @@ are to be finalised in the milestone that implements them.
 - Spawn orientation per Guideline: flat side down, horizontally centred
   (3-wide pieces at columns 3-5, I and O centred).
 - 7-bag randomizer: pieces are drawn from a shuffled bag of all seven.
-- Next queue: **(decision)** show 3 upcoming pieces.
+- Next queue: **(decision)** show 5 upcoming pieces.
 
 ## Movement and rotation
 - Left/right shift, soft drop, hard drop, clockwise and counter-clockwise rotation.
@@ -27,8 +27,12 @@ are to be finalised in the milestone that implements them.
   its own. **(decision)** O has no kicks and its rotation is a no-op that does
   not reset the lock timer. Kick data is in `src/logic/srs.gd`, transcribed
   y-up as published and flipped to Godot's y-down at lookup.
-- Hold: one swap per piece; usable again after the next lock.
-- Ghost piece shows the hard-drop landing position.
+- Hold: one use per piece; available again once the piece locks. An empty slot
+  takes the piece and spawns the next queued one; an occupied slot swaps without
+  touching the queue. The incoming piece always spawns in its canonical
+  orientation and position. If it cannot spawn, the game is over (block-out).
+- Ghost piece shows the exact hard-drop landing position. It is visual only and
+  can be toggled off; it has no effect on collision or gameplay.
 
 ## Gravity, locking
 - Gravity follows the Guideline curve, seconds per row =
@@ -53,7 +57,7 @@ are to be finalised in the milestone that implements them.
 ## Controls (desktop)
 Input Map actions in `project.godot`: `move_left` (Left), `move_right`
 (Right), `soft_drop` (Down), `hard_drop` (Space), `rotate_cw` (Up, X),
-`rotate_ccw` (Z), `restart` (R). Latest direction pressed wins.
+`rotate_ccw` (Z), `restart` (R), `hold` (C or Shift), `toggle_ghost` (G). Latest direction pressed wins.
 
 ## Scoring (`src/logic/score_keeper.gd`)
 - Soft drop: 1 point per cell fallen while soft drop is held. Hard drop: 2

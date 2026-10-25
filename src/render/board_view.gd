@@ -7,6 +7,8 @@ const CELL_SIZE: int = 48
 const BACKGROUND_COLOR := Color(0.08, 0.08, 0.11)
 const GRID_COLOR := Color(1, 1, 1, 0.07)
 const BLOCK_INSET: float = 1.0
+const GHOST_FILL_ALPHA: float = 0.18
+const GHOST_OUTLINE_ALPHA: float = 0.6
 
 const PIECE_COLORS: Dictionary = {
 	Tetromino.Type.I: Color(0.2, 0.85, 0.95),
@@ -17,6 +19,9 @@ const PIECE_COLORS: Dictionary = {
 	Tetromino.Type.J: Color(0.3, 0.4, 0.9),
 	Tetromino.Type.L: Color(0.95, 0.6, 0.2),
 }
+
+## Ghost piece visibility (view option only; never affects gameplay).
+var show_ghost: bool = true
 
 var _session: GameSession
 
@@ -45,6 +50,9 @@ func _draw() -> void:
 			if id != Board.EMPTY:
 				_draw_block(x, y, id)
 	if _session.active != null:
+		if show_ghost:
+			for c in _session.ghost_cells():
+				_draw_ghost_block(c.x, c.y, _session.active.type)
 		for c in _session.active.cells():
 			_draw_block(c.x, c.y, _session.active.type)
 
@@ -55,3 +63,18 @@ func _draw_block(x: int, y: int, type: int) -> void:
 	var pos := Vector2(x, y - Board.HIDDEN_ROWS) * CELL_SIZE
 	var rect := Rect2(pos, Vector2(CELL_SIZE, CELL_SIZE)).grow(-BLOCK_INSET)
 	draw_rect(rect, PIECE_COLORS[type])
+
+
+func toggle_ghost() -> void:
+	show_ghost = not show_ghost
+	queue_redraw()
+
+
+func _draw_ghost_block(x: int, y: int, type: int) -> void:
+	if not _session.board.is_visible_row(y):
+		return
+	var pos := Vector2(x, y - Board.HIDDEN_ROWS) * CELL_SIZE
+	var rect := Rect2(pos, Vector2(CELL_SIZE, CELL_SIZE)).grow(-BLOCK_INSET)
+	var color: Color = PIECE_COLORS[type]
+	draw_rect(rect, Color(color, GHOST_FILL_ALPHA))
+	draw_rect(rect, Color(color, GHOST_OUTLINE_ALPHA), false, 2.0)
