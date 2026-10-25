@@ -27,7 +27,7 @@ Rules:
   (pure, tested) places every element from the usable area; `scenes/main.gd`
   feeds it the platform safe area on phones and re-applies on resize.
 - Touch: `TouchControls` hit-tests raw `InputEventScreenTouch/Drag` (GUI Buttons
-  only route one pointer) and emits `action_changed`; `main.gd` turns that into
+  only route one pointer) and emits `action_changed`; `ControllerSkin` (pure drawing helpers) paints the controller look; `main.gd` turns that into
   `InputEventAction`s, so touch and keyboard share `InputHandler`. It must never
   reference the session or board. Desktop emulates touch from the mouse.
 - Pause/Game Over screens are `Overlay` (GUI buttons); `GameSession.paused`

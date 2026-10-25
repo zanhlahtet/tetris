@@ -59,8 +59,10 @@ Input Map actions in `project.godot`: `move_left` (Left), `move_right`
 (Right), `soft_drop` (Down), `hard_drop` (Space), `rotate_cw` (Up, X),
 `rotate_ccw` (Z), `restart` (R), `hold` (C or Shift), `toggle_ghost` (G), `toggle_sound` (M), `pause` (Esc or P). Latest direction pressed wins.
 
-Touch buttons (bottom of the screen) press the same actions: LEFT, RIGHT, SOFT
-(soft drop) on the left; CCW, CW, HOLD, DROP (hard drop) on the right; PAUSE
+The on-screen controller (bottom of the screen) presses the same actions: a
+D-pad on the left (left, right, down = soft drop; the up arm is decoration),
+round CCW (lower-left) and CW (upper-right) buttons on the right, and HOLD
+above a larger DROP (hard drop) pill in the middle; PAUSE is a small pill
 beside the next queue. Holding LEFT/RIGHT uses the normal DAS/ARR. Multiple
 fingers work at once, and a finger can slide between LEFT, RIGHT and SOFT.
 Gestures are not implemented. The ghost toggle is keyboard-only.
