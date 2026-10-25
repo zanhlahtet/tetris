@@ -91,6 +91,16 @@ func hard_drop() -> void:
 	_lock_piece()
 
 
+## Rotates clockwise using SRS wall kicks. Returns true if the piece rotated.
+func rotate_cw() -> bool:
+	return _rotate(1)
+
+
+## Rotates counter-clockwise using SRS wall kicks. Returns true if rotated.
+func rotate_ccw() -> bool:
+	return _rotate(-1)
+
+
 ## Advances the simulation by delta_ms milliseconds.
 func tick(delta_ms: int) -> void:
 	if not _is_playing():
@@ -146,8 +156,29 @@ func _move_horizontal(direction: int) -> bool:
 	return true
 
 
-## Lock timer bookkeeping after any successful grounded-relevant move.
-## Rotation (M3) should call this too.
+## Tries the SRS kick tests in order; the first non-colliding one wins. A
+## failed rotation changes nothing. O never moves, so its rotation is a visual
+## no-op that does not touch the lock timer.
+func _rotate(step: int) -> bool:
+	if not _is_playing():
+		return false
+	var from: int = active.rotation
+	var to: int = posmod(from + step, Tetromino.ROTATION_COUNT)
+	if active.type == Tetromino.Type.O:
+		active.rotation = to
+		return true
+	var was_grounded: bool = is_grounded()
+	for offset in Srs.kick_offsets(active.type, from, to):
+		var new_origin: Vector2i = active.origin + offset
+		if board.can_place(active.cells_at(new_origin, to)):
+			active.origin = new_origin
+			active.rotation = to
+			_after_move(was_grounded)
+			return true
+	return false
+
+
+## Lock timer bookkeeping after any successful horizontal move or rotation.
 func _after_move(was_grounded: bool) -> void:
 	if was_grounded and is_grounded():
 		if lock_resets >= MAX_LOCK_RESETS:

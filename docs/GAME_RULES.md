@@ -21,7 +21,12 @@ are to be finalised in the milestone that implements them.
 
 ## Movement and rotation
 - Left/right shift, soft drop, hard drop, clockwise and counter-clockwise rotation.
-- Super Rotation System (SRS) with standard wall-kick tables (separate for I).
+- Super Rotation System (SRS): states 0 (spawn), R, 2, L. Each rotation tries
+  the 5 standard kick tests in order and uses the first that fits; if none fit
+  the rotation fails and the piece is unchanged. J/L/S/T/Z share one table, I has
+  its own. **(decision)** O has no kicks and its rotation is a no-op that does
+  not reset the lock timer. Kick data is in `src/logic/srs.gd`, transcribed
+  y-up as published and flipped to Godot's y-down at lookup.
 - Hold: one swap per piece; usable again after the next lock.
 - Ghost piece shows the hard-drop landing position.
 
@@ -44,7 +49,8 @@ are to be finalised in the milestone that implements them.
 
 ## Controls (desktop)
 Input Map actions in `project.godot`: `move_left` (Left), `move_right`
-(Right), `soft_drop` (Down), `hard_drop` (Space). Latest direction pressed wins.
+(Right), `soft_drop` (Down), `hard_drop` (Space), `rotate_cw` (Up, X),
+`rotate_ccw` (Z). Latest direction pressed wins.
 
 ## Scoring (Guideline)
 - Soft drop: 1 point per cell. Hard drop: 2 points per cell.

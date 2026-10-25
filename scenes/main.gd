@@ -17,6 +17,8 @@ func _ready() -> void:
 	_input.direction_changed.connect(_session.set_direction)
 	_input.soft_drop_changed.connect(_session.set_soft_drop)
 	_input.hard_drop_pressed.connect(_session.hard_drop)
+	_input.rotate_cw_pressed.connect(_session.rotate_cw)
+	_input.rotate_ccw_pressed.connect(_session.rotate_ccw)
 
 
 func _process(delta: float) -> void:

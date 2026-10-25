@@ -1,12 +1,14 @@
 class_name InputHandler
 extends Node
 ## Translates Input Map actions (move_left, move_right, soft_drop, hard_drop,
-## defined in project.godot) into abstract game commands. Emits signals only;
+## rotate_cw, rotate_ccw, defined in project.godot) into abstract game commands. Emits signals only;
 ## knows nothing about the board or session.
 
 signal direction_changed(direction: int)  ## -1, 0 or 1; latest press wins
 signal soft_drop_changed(enabled: bool)
 signal hard_drop_pressed
+signal rotate_cw_pressed
+signal rotate_ccw_pressed
 
 var _left_held: bool = false
 var _right_held: bool = false
@@ -26,6 +28,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		soft_drop_changed.emit(event.is_pressed())
 	elif event.is_action_pressed("hard_drop"):
 		hard_drop_pressed.emit()
+	elif event.is_action_pressed("rotate_cw"):
+		rotate_cw_pressed.emit()
+	elif event.is_action_pressed("rotate_ccw"):
+		rotate_ccw_pressed.emit()
 
 
 ## pressed_direction is the direction just pressed, or 0 on a release; on
