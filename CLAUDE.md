@@ -20,8 +20,16 @@ Rules:
 - Grid coordinates are integers; x right, y down; row 0 is the top of the
   hidden buffer (`Board.HIDDEN_ROWS` = 20 hidden rows above 20 visible).
 - No physics engine; collisions are grid lookups.
-- Base resolution 720x1280, stretch `canvas_items`, aspect `keep`.
-  Board cell is 48px (`BoardView.CELL_SIZE`).
+- Base resolution 720x1280, stretch `canvas_items`, aspect `expand`: taller or
+  wider screens get extra viewport, never letterboxing. `GameLayout.compute(safe_rect)`
+  (pure, tested) places every element from the usable area; `scenes/main.gd`
+  feeds it the platform safe area on phones and re-applies on resize.
+- Touch: `TouchControls` hit-tests raw `InputEventScreenTouch/Drag` (GUI Buttons
+  only route one pointer) and emits `action_changed`; `main.gd` turns that into
+  `InputEventAction`s, so touch and keyboard share `InputHandler`. It must never
+  reference the session or board. Desktop emulates touch from the mouse.
+- Pause/Game Over screens are `Overlay` (GUI buttons); `GameSession.paused`
+  freezes ticks and commands. The app auto-pauses when it loses focus.
 
 Piece model: `Tetromino` (static SRS shape data; type value = board cell id),
 `ActivePiece` (type/rotation/origin, never stored in the Board until locked),

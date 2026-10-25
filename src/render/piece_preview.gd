@@ -5,11 +5,14 @@ extends Node2D
 
 enum Source { NEXT, HOLD }
 
-const CELL: int = 24
-const SLOT_SIZE := Vector2(96, 72)
+const PANEL_PADDING: float = 4.0
+const PANEL_COLOR := Color(1, 1, 1, 0.04)
 const HOLD_USED_ALPHA: float = 0.35
 
 @export var source: Source = Source.NEXT
+
+## Pixel size of one preview block; a slot is 4x3 blocks. Set by the layout.
+var cell_size: int = 24
 
 var _session: GameSession
 
@@ -19,7 +22,19 @@ func bind(session: GameSession) -> void:
 	queue_redraw()
 
 
+func set_cell_size(value: int) -> void:
+	cell_size = value
+	queue_redraw()
+
+
+func _slot_size() -> Vector2:
+	return Vector2(4, 3) * cell_size
+
+
 func _draw() -> void:
+	var slots: int = GameSession.PREVIEW_COUNT if source == Source.NEXT else 1
+	var panel := Rect2(Vector2.ZERO, Vector2(_slot_size().x, _slot_size().y * slots)).grow(PANEL_PADDING)
+	draw_rect(panel, PANEL_COLOR)
 	if _session == null:
 		return
 	if source == Source.HOLD:
@@ -38,10 +53,10 @@ func _draw_piece(type: int, slot: int, alpha: float) -> void:
 	for c in cells:
 		min_c = Vector2i(mini(min_c.x, c.x), mini(min_c.y, c.y))
 		max_c = Vector2i(maxi(max_c.x, c.x), maxi(max_c.y, c.y))
-	var extent := Vector2(max_c - min_c + Vector2i.ONE) * CELL
-	var slot_origin := Vector2(0, slot * SLOT_SIZE.y)
-	var offset := slot_origin + (SLOT_SIZE - extent) / 2.0
+	var extent := Vector2(max_c - min_c + Vector2i.ONE) * cell_size
+	var slot_origin := Vector2(0, slot * _slot_size().y)
+	var offset := slot_origin + (_slot_size() - extent) / 2.0
 	var color := Color(BoardView.PIECE_COLORS[type], alpha)
 	for c in cells:
-		var rect := Rect2(offset + Vector2(c - min_c) * CELL, Vector2(CELL, CELL)).grow(-1.0)
+		var rect := Rect2(offset + Vector2(c - min_c) * cell_size, Vector2(cell_size, cell_size)).grow(-1.0)
 		draw_rect(rect, color)

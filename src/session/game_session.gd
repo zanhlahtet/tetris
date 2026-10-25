@@ -28,6 +28,8 @@ var queue: Array[int] = []
 var held_type: int = 0
 ## True once the current piece has used its hold; cleared when a piece locks.
 var hold_used: bool = false
+## While true, ticks and all commands are ignored (state is untouched).
+var paused: bool = false
 ## True after block-out (spawn blocked) or lock-out (piece locked entirely in
 ## the hidden rows). No further ticking or commands apply until restart().
 var game_over: bool = false
@@ -65,6 +67,7 @@ func _reset_state(seed_value: int, use_seed: bool) -> void:
 	active = null
 	held_type = 0
 	hold_used = false
+	paused = false
 	game_over = false
 	lock_resets = 0
 	_gravity_ms = 0
@@ -139,6 +142,16 @@ func ghost_cells() -> Array[Vector2i]:
 ## True if the active piece cannot move down.
 func is_grounded() -> bool:
 	return active != null and not _can_move(0, 1)
+
+
+## Freezes the game. Ignored once the game is over.
+func pause() -> void:
+	if not game_over:
+		paused = true
+
+
+func resume() -> void:
+	paused = false
 
 
 ## Sets the held horizontal direction (-1, 0, 1). A new non-zero direction
@@ -297,7 +310,7 @@ func _lock_piece() -> void:
 
 
 func _is_playing() -> bool:
-	return active != null and not game_over
+	return active != null and not game_over and not paused
 
 
 func _fill_queue() -> void:

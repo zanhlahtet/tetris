@@ -1,47 +1,42 @@
 class_name Hud
 extends CanvasLayer
-## Basic HUD: score, lines and level above the board, plus a game-over banner.
-## Reads session state each frame; never mutates it. Built from code so the
-## scene stays minimal.
+## Basic HUD: HOLD/NEXT captions and the score, lines and level readouts.
+## Positions and sizes come from GameLayout. Reads session state each frame;
+## never mutates it.
 
-const FONT_SIZE: int = 36
-const BANNER_FONT_SIZE: int = 56
-const CAPTION_FONT_SIZE: int = 24
-const MARGIN: float = 40.0
-const BASE_WIDTH: float = 720.0
-const BOARD_CENTER := Vector2(360, 640)  # matches BoardView placement in main.gd
+const CAPTION_FONT_SIZE: int = 20
 
 var _session: GameSession
+var _hold_caption: Label
+var _next_caption: Label
 var _score: Label
 var _lines: Label
 var _level: Label
-var _banner: Label
 
 
 func _ready() -> void:
-	_score = _make_label(FONT_SIZE, HORIZONTAL_ALIGNMENT_LEFT)
-	_lines = _make_label(FONT_SIZE, HORIZONTAL_ALIGNMENT_LEFT)
-	_level = _make_label(FONT_SIZE, HORIZONTAL_ALIGNMENT_RIGHT)
-	_score.position = Vector2(MARGIN, 30)
-	_lines.position = Vector2(MARGIN, 85)
-	_level.position = Vector2(BASE_WIDTH - MARGIN - 300, 30)
-	_level.size = Vector2(300, 50)
-	var hold_title := _make_label(CAPTION_FONT_SIZE, HORIZONTAL_ALIGNMENT_LEFT)
-	hold_title.text = "HOLD"
-	hold_title.position = Vector2(12, 160)
-	var next_title := _make_label(CAPTION_FONT_SIZE, HORIZONTAL_ALIGNMENT_LEFT)
-	next_title.text = "NEXT"
-	next_title.position = Vector2(612, 160)
-	_banner = _make_label(BANNER_FONT_SIZE, HORIZONTAL_ALIGNMENT_CENTER)
-	_banner.text = "GAME OVER\nPress R to restart"
-	_banner.size = Vector2(BASE_WIDTH, 200)
-	_banner.position = Vector2(0, BOARD_CENTER.y - 100)
-	_banner.visible = false
+	_hold_caption = _make_label("HOLD")
+	_next_caption = _make_label("NEXT")
+	_score = _make_label("")
+	_lines = _make_label("")
+	_level = _make_label("")
+	_hold_caption.add_theme_font_size_override("font_size", CAPTION_FONT_SIZE)
+	_next_caption.add_theme_font_size_override("font_size", CAPTION_FONT_SIZE)
 
 
 func bind(session: GameSession) -> void:
 	_session = session
 	_refresh()
+
+
+func apply_layout(layout: GameLayout) -> void:
+	_hold_caption.position = layout.hold_caption_pos
+	_next_caption.position = layout.next_caption_pos
+	var block: float = layout.stat_block_height()
+	var labels: Array[Label] = [_score, _lines, _level]
+	for i in range(labels.size()):
+		labels[i].add_theme_font_size_override("font_size", layout.stat_font_size)
+		labels[i].position = layout.stats_rect.position + Vector2(0, i * block)
 
 
 func _process(_delta: float) -> void:
@@ -51,15 +46,13 @@ func _process(_delta: float) -> void:
 func _refresh() -> void:
 	if _session == null or _score == null:
 		return
-	_score.text = "SCORE %d" % _session.stats.score
-	_lines.text = "LINES %d" % _session.stats.lines
-	_level.text = "LEVEL %d" % _session.stats.level
-	_banner.visible = _session.game_over
+	_score.text = "SCORE\n%d" % _session.stats.score
+	_lines.text = "LINES\n%d" % _session.stats.lines
+	_level.text = "LEVEL\n%d" % _session.stats.level
 
 
-func _make_label(font_size: int, alignment: HorizontalAlignment) -> Label:
+func _make_label(text: String) -> Label:
 	var label := Label.new()
-	label.add_theme_font_size_override("font_size", font_size)
-	label.horizontal_alignment = alignment
+	label.text = text
 	add_child(label)
 	return label
