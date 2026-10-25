@@ -1,7 +1,7 @@
 class_name InputHandler
 extends Node
 ## Translates Input Map actions (from keyboard or the on-screen touch buttons) (move_left, move_right, soft_drop, hard_drop,
-## rotate_cw, rotate_ccw, restart, hold, toggle_ghost, pause, defined in project.godot) into abstract game commands. Emits signals only;
+## rotate_cw, rotate_ccw, restart, hold, toggle_ghost, toggle_sound, pause, defined in project.godot) into abstract game commands. Emits signals only;
 ## knows nothing about the board or session.
 
 signal direction_changed(direction: int)  ## -1, 0 or 1; latest press wins
@@ -13,6 +13,7 @@ signal restart_pressed
 signal hold_pressed
 signal toggle_ghost_pressed
 signal pause_pressed
+signal toggle_sound_pressed
 
 var _left_held: bool = false
 var _right_held: bool = false
@@ -44,6 +45,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		toggle_ghost_pressed.emit()
 	elif event.is_action_pressed("pause"):
 		pause_pressed.emit()
+	elif event.is_action_pressed("toggle_sound"):
+		toggle_sound_pressed.emit()
+
+
+## Forgets every held input (used when the app loses focus, since the matching
+## release events may never arrive).
+func release_all() -> void:
+	_left_held = false
+	_right_held = false
+	_update_direction(0)
+	soft_drop_changed.emit(false)
 
 
 ## pressed_direction is the direction just pressed, or 0 on a release; on

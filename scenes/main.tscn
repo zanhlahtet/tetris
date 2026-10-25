@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scenes/main.gd" id="1"]
 [ext_resource type="Script" path="res://src/render/board_view.gd" id="2"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://src/render/piece_preview.gd" id="5"]
 [ext_resource type="Script" path="res://src/ui/touch_controls.gd" id="6"]
 [ext_resource type="Script" path="res://src/ui/overlay.gd" id="7"]
+[ext_resource type="Script" path="res://src/audio/sfx.gd" id="8"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
@@ -35,3 +36,6 @@ script = ExtResource("6")
 
 [node name="Overlay" type="CanvasLayer" parent="."]
 script = ExtResource("7")
+
+[node name="Sfx" type="Node" parent="."]
+script = ExtResource("8")

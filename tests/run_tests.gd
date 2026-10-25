@@ -11,6 +11,9 @@ func _init() -> void:
 	var tests: int = 0
 	for file in _test_files():
 		var script := load("res://tests/" + file) as GDScript
+		if script == null or not script.can_instantiate():
+			check(false, "could not load tests/" + file)
+			continue
 		var suite: RefCounted = script.new()
 		suite.set("t", self)
 		for method in suite.get_method_list():

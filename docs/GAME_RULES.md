@@ -57,7 +57,7 @@ are to be finalised in the milestone that implements them.
 ## Controls
 Input Map actions in `project.godot`: `move_left` (Left), `move_right`
 (Right), `soft_drop` (Down), `hard_drop` (Space), `rotate_cw` (Up, X),
-`rotate_ccw` (Z), `restart` (R), `hold` (C or Shift), `toggle_ghost` (G), `pause` (Esc or P). Latest direction pressed wins.
+`rotate_ccw` (Z), `restart` (R), `hold` (C or Shift), `toggle_ghost` (G), `toggle_sound` (M), `pause` (Esc or P). Latest direction pressed wins.
 
 Touch buttons (bottom of the screen) press the same actions: LEFT, RIGHT, SOFT
 (soft drop) on the left; CCW, CW, HOLD, DROP (hard drop) on the right; PAUSE
@@ -141,6 +141,23 @@ line.
   A piece locking partly in the visible rows is not a lock-out.
 - Restart (`restart` action, R on desktop) resets board, queue, bag, score,
   lines, level and timers; DAS/ARR settings and held keys are kept.
+
+## Feedback, sound and saved data
+- Effects are deliberately small and short: a white flash over each cleared row
+  (0.2 s), a faint streak above a hard-dropped piece (0.15 s), and a red tint
+  fading in over the board at game over. No particles.
+- Sounds are generated at startup (square-wave blips, no audio files): move,
+  rotate, hold, hard-drop thud, lock tick, a clear jingle that gets longer with
+  more lines, and a falling game-over tune. Sound can be turned off from the
+  Pause overlay (SOUND button) or with M.
+- Saved locally in `user://save.cfg`, never transmitted: the high score, the
+  sound preference and the ghost preference. A missing or corrupt file just
+  resets to defaults. The high score is also committed when the app is
+  backgrounded or closed mid-game.
+- Backgrounding or losing focus pauses the game and releases all held inputs;
+  it stays paused until you resume. The Android back button pauses.
+- A single frame is simulated for at most 100 ms, so a hitch never causes a
+  burst of catch-up movement.
 
 ## Out of scope
 Multiplayer, online features, other modes, 1980s-style rotation, sound/visual

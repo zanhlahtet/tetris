@@ -8,11 +8,13 @@ const CAPTION_FONT_SIZE: int = 20
 const AWARD_COLOR := Color(1.0, 0.85, 0.35)
 
 var _session: GameSession
+var _save: SaveData
 var _hold_caption: Label
 var _next_caption: Label
 var _score: Label
 var _lines: Label
 var _level: Label
+var _best: Label
 var _award: Label
 
 
@@ -22,6 +24,7 @@ func _ready() -> void:
 	_score = _make_label("")
 	_lines = _make_label("")
 	_level = _make_label("")
+	_best = _make_label("")
 	_award = _make_label("")
 	_award.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_award.add_theme_color_override("font_color", AWARD_COLOR)
@@ -29,8 +32,9 @@ func _ready() -> void:
 	_next_caption.add_theme_font_size_override("font_size", CAPTION_FONT_SIZE)
 
 
-func bind(session: GameSession) -> void:
+func bind(session: GameSession, save: SaveData) -> void:
 	_session = session
+	_save = save
 	_refresh()
 
 
@@ -38,7 +42,7 @@ func apply_layout(layout: GameLayout) -> void:
 	_hold_caption.position = layout.hold_caption_pos
 	_next_caption.position = layout.next_caption_pos
 	var block: float = layout.stat_block_height()
-	var labels: Array[Label] = [_score, _lines, _level]
+	var labels: Array[Label] = [_score, _lines, _level, _best]
 	for i in range(labels.size()):
 		labels[i].add_theme_font_size_override("font_size", layout.stat_font_size)
 		labels[i].position = layout.stats_rect.position + Vector2(0, i * block)
@@ -52,11 +56,12 @@ func _process(_delta: float) -> void:
 
 
 func _refresh() -> void:
-	if _session == null or _score == null:
+	if _session == null or _save == null or _score == null:
 		return
 	_score.text = "SCORE\n%d" % _session.stats.score
 	_lines.text = "LINES\n%d" % _session.stats.lines
 	_level.text = "LEVEL\n%d" % _session.stats.level
+	_best.text = "BEST\n%d" % maxi(_save.high_score, _session.stats.score)
 	_award.text = _session.last_lock.describe() if _session.last_lock != null else ""
 
 

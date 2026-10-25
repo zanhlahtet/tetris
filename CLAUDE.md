@@ -13,7 +13,9 @@ Strict layering; dependencies point down only.
 | Render | `src/render/` | Draws state with procedural rectangles. Read-only. |
 | Input | `src/input/` | Device input -> abstract command signals. No game knowledge. |
 | HUD/UI | `src/ui/` | Score, next/hold, touch controls. Reads session, never mutates the board. |
-| Composition | `scenes/main.*` | Wires the above together. |
+| Audio | `src/audio/` | `SfxSynth` generates the effects; `Sfx` plays them from session events. No asset files. |
+| Persistence | `src/persist/` | `SaveData`: high score and preferences in `user://save.cfg`. |
+| Composition | `scenes/main.*` | Wires the above together, owns saving and app-lifecycle handling. |
 
 Rules:
 - Logic and session code must not reference Nodes, scenes, `Input`, or rendering.
@@ -67,3 +69,13 @@ Commit generated `*.uid` files; never commit `.godot/`.
 - Small focused commits; imperative messages.
 - Push the branch; open PRs only when asked. Never force-push; never merge
   without review.
+
+## Events, effects and persistence
+`GameSession` emits presentation signals (`moved`, `rotated`, `held`, `hard_dropped`,
+`locked`, `lines_cleared`, `game_ended`); sound (`Sfx`) and visual effects
+(`BoardView`) only listen. Session logic must never depend on them. Preferences
+and the high score live in `SaveData`; load failures fall back to defaults.
+
+## Building for devices
+See `docs/BUILDING.md`. `export_presets.cfg` is committed without credentials;
+never commit keystores, provisioning profiles or team-specific secrets.
