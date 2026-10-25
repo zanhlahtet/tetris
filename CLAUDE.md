@@ -29,7 +29,8 @@ Piece model: `Tetromino` (static SRS shape data; type value = board cell id),
 
 Session simulation: `GameSession.tick(delta_ms)` takes integer milliseconds and
 is the only source of time; commands are `set_direction`, `set_soft_drop`,
-`hard_drop`, `rotate_cw`, `rotate_ccw`. SRS kick tables live in `Srs` (published
+`hard_drop`, `rotate_cw`, `rotate_ccw`, `restart`. `session.stats` (`ScoreKeeper`) holds score, lines and
+level; `Gravity` maps level to ms/row. The HUD reads them. SRS kick tables live in `Srs` (published
 y-up data, returned y-down). Tests drive it directly with no scene or rendering. `scenes/main.gd`
 converts frame delta to whole ms. Input is read only via Input Map actions in
 `InputHandler`.

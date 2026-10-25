@@ -58,3 +58,69 @@ func test_can_place_collisions() -> void:
 	b.set_cell(4, 30, 3)
 	t.check(not b.can_place([Vector2i(3, 30), Vector2i(4, 30)] as Array[Vector2i]), "locked cell")
 	t.check(b.can_place([Vector2i(3, 30), Vector2i(5, 30)] as Array[Vector2i]), "neighbours free")
+
+
+func _fill_row(b: Board, y: int, value: int = 1, except: Array[int] = []) -> void:
+	for x in range(Board.WIDTH):
+		if not except.has(x):
+			b.set_cell(x, y, value)
+
+
+func test_full_rows_detection() -> void:
+	var b := Board.new()
+	t.check(b.full_rows().is_empty(), "empty board")
+	_fill_row(b, 39, 1, [3] as Array[int])
+	t.check(b.full_rows().is_empty(), "row missing one cell is not full")
+	b.set_cell(3, 39, 1)
+	_fill_row(b, 5)  # hidden rows count too
+	t.check_eq(b.full_rows(), [5, 39] as Array[int], "full rows ascending")
+
+
+func test_clear_single_row_compacts() -> void:
+	var b := Board.new()
+	_fill_row(b, 39)
+	b.set_cell(0, 38, 5)
+	b.set_cell(9, 37, 6)
+	b.clear_rows([39] as Array[int])
+	t.check_eq(b.get_cell(0, 39), 5, "row 38 fell to 39")
+	t.check_eq(b.get_cell(9, 38), 6, "row 37 fell to 38")
+	t.check_eq(b.get_cell(1, 39), Board.EMPTY, "rest of fallen row empty")
+	t.check(b.full_rows().is_empty(), "no full rows remain")
+	t.check_eq(b.get_cell(9, 37), Board.EMPTY, "vacated row empty")
+
+
+func test_clear_non_adjacent_rows_preserves_order() -> void:
+	var b := Board.new()
+	_fill_row(b, 39)
+	_fill_row(b, 37)
+	b.set_cell(1, 38, 2)
+	b.set_cell(2, 36, 3)
+	b.set_cell(3, 35, 4)
+	b.clear_rows([37, 39] as Array[int])
+	t.check_eq(b.get_cell(1, 39), 2, "row 38 moved down 1")
+	t.check_eq(b.get_cell(2, 38), 3, "row 36 moved down 2")
+	t.check_eq(b.get_cell(3, 37), 4, "row 35 moved down 2")
+	t.check_eq(b.get_cell(1, 38), Board.EMPTY, "old position vacated")
+
+
+func test_clear_four_rows_and_shift_hidden_rows() -> void:
+	var b := Board.new()
+	for y in range(36, 40):
+		_fill_row(b, y)
+	b.set_cell(7, 19, 3)  # hidden-buffer block above the stack
+	b.clear_rows([36, 37, 38, 39] as Array[int])
+	t.check_eq(b.get_cell(7, 23), 3, "hidden block fell four rows")
+	t.check_eq(b.get_cell(7, 19), Board.EMPTY, "origin vacated")
+	for y in range(Board.TOTAL_ROWS):
+		for x in range(Board.WIDTH):
+			if (x != 7 or y != 23) and b.get_cell(x, y) != Board.EMPTY:
+				t.check(false, "stray cell at (%d,%d)" % [x, y])
+				return
+	t.check(true)
+
+
+func test_clear_nothing_is_noop() -> void:
+	var b := Board.new()
+	b.set_cell(2, 39, 4)
+	b.clear_rows([] as Array[int])
+	t.check_eq(b.get_cell(2, 39), 4, "unchanged")

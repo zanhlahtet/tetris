@@ -53,3 +53,33 @@ func can_place(cells: Array[Vector2i]) -> bool:
 		if not is_empty(c.x, c.y):
 			return false
 	return true
+
+
+## Indices of completely filled rows (ascending, i.e. top to bottom).
+func full_rows() -> Array[int]:
+	var rows: Array[int] = []
+	for y in range(TOTAL_ROWS):
+		var full: bool = true
+		for x in range(WIDTH):
+			if _cells[y * WIDTH + x] == EMPTY:
+				full = false
+				break
+		if full:
+			rows.append(y)
+	return rows
+
+
+## Removes the given rows; rows above them fall down, order preserved, and
+## empty rows enter at the top.
+func clear_rows(rows: Array[int]) -> void:
+	var write_y: int = TOTAL_ROWS - 1
+	for read_y in range(TOTAL_ROWS - 1, -1, -1):
+		if rows.has(read_y):
+			continue
+		if write_y != read_y:
+			for x in range(WIDTH):
+				_cells[write_y * WIDTH + x] = _cells[read_y * WIDTH + x]
+		write_y -= 1
+	for y in range(write_y + 1):
+		for x in range(WIDTH):
+			_cells[y * WIDTH + x] = EMPTY

@@ -7,6 +7,7 @@ var _session: GameSession = GameSession.new()
 var _elapsed_ms: float = 0.0
 
 @onready var _board_view: BoardView = $BoardView
+@onready var _hud: Hud = $Hud
 @onready var _input: InputHandler = $InputHandler
 
 
@@ -14,11 +15,13 @@ func _ready() -> void:
 	_board_view.position = BOARD_ORIGIN
 	_session.spawn_next()
 	_board_view.bind(_session)
+	_hud.bind(_session)
 	_input.direction_changed.connect(_session.set_direction)
 	_input.soft_drop_changed.connect(_session.set_soft_drop)
 	_input.hard_drop_pressed.connect(_session.hard_drop)
 	_input.rotate_cw_pressed.connect(_session.rotate_cw)
 	_input.rotate_ccw_pressed.connect(_session.rotate_ccw)
+	_input.restart_pressed.connect(_session.restart)
 
 
 func _process(delta: float) -> void:
