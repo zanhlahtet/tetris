@@ -137,16 +137,16 @@ func test_disabling_releases_everything() -> void:
 	t.check(not _controls.is_pressed(&"move_left") and not _controls.is_pressed(&"soft_drop"), "all released")
 	t.check_eq(_log.size(), 4, "release events emitted so no key stays stuck")
 	_log.clear()
-	_touch(2, _center(&"hard_drop"), true)
+	_touch(2, _center(&"rotate_cw"), true)
 	t.check(_log.is_empty(), "ignored while disabled")
 	_controls.enabled = true
-	_touch(2, _center(&"hard_drop"), true)
-	t.check_eq(_log, [[&"hard_drop", true]], "works again when enabled")
+	_touch(2, _center(&"rotate_cw"), true)
+	t.check_eq(_log, [[&"rotate_cw", true]], "works again when enabled")
 
 
 func test_late_release_of_unknown_touch_is_harmless() -> void:
 	_setup()
-	_touch(3, _center(&"hold"), false)
+	_touch(3, _center(&"rotate_ccw"), false)
 	t.check(_log.is_empty(), "nothing to release")
 
 
@@ -232,25 +232,62 @@ func test_face_buttons_are_round_and_distinct() -> void:
 	t.check(ccw.get_center().distance_to(cw.get_center()) > ccw.size.x * 1.2, "circles do not touch")
 
 
-func test_hard_drop_is_the_largest_pill_and_apart_from_face_buttons() -> void:
+func test_removed_hold_and_drop_buttons_are_gone() -> void:
 	_setup()
-	var drop: Rect2 = _layout.buttons[&"hard_drop"]
-	var hold: Rect2 = _layout.buttons[&"hold"]
-	t.check(drop.get_area() > hold.get_area(), "DROP bigger than HOLD")
-	t.check(drop.end.x + GameLayout.CLUSTER_GAP <= (_layout.buttons[&"rotate_ccw"] as Rect2).position.x, "DROP clear of the face buttons")
+	t.check(not _layout.buttons.has(&"hold") and not _layout.buttons.has(&"hard_drop"), "no hold/drop hit regions")
+	t.check(not TouchControls.LABELS.has(&"hold") and not TouchControls.LABELS.has(&"hard_drop"), "no hold/drop labels")
+	# Where DROP and HOLD used to be (between the clusters) nothing but PAUSE responds.
+	var mid := Vector2((_layout.dpad_rect.end.x + _layout.face_rect.position.x) / 2.0, _layout.controls_rect.position.y + 20.0)
+	_touch(0, mid, true)
+	_touch(0, mid, false)
+	t.check(_log.is_empty(), "empty gap does nothing")
+	t.check(InputMap.has_action("hold") and InputMap.has_action("hard_drop"), "hold and hard_drop actions still exist for the keyboard")
 
 
-func test_skin_draws_every_state_without_error() -> void:
-	# Smoke test: all states (normal, pressed, disabled) execute on a real canvas item.
-	var node := Node2D.new()
-	for alpha in [1.0, ControllerSkin.DISABLED_ALPHA]:
-		ControllerSkin.draw_body(node, _layout.controls_rect, alpha)
-		for pressed in [false, true]:
-			ControllerSkin.draw_dpad(node, _layout.dpad_rect, pressed, pressed, pressed, alpha)
-			ControllerSkin.draw_round_button(node, _layout.buttons[&"rotate_cw"], ControllerSkin.FACE_CW, "CW", pressed, alpha)
-			ControllerSkin.draw_pill(node, _layout.buttons[&"hard_drop"], ControllerSkin.PILL_DROP, "DROP", pressed, alpha)
-	node.free()
-	t.check(true, "drew")
+func test_rotation_labels_and_actions() -> void:
+	_setup()
+	t.check_eq(TouchControls.LABELS[&"rotate_ccw"], "X", "X is counter-clockwise")
+	t.check_eq(TouchControls.LABELS[&"rotate_cw"], "O", "O is clockwise")
+	t.check((_layout.buttons[&"rotate_ccw"] as Rect2).position.y > (_layout.buttons[&"rotate_cw"] as Rect2).position.y, "X stays lower-left, O upper-right")
+	_touch(0, _center(&"rotate_ccw"), true)
+	_touch(1, _center(&"rotate_cw"), true)
+	t.check_eq(_log, [[&"rotate_ccw", true], [&"rotate_cw", true]], "each fires its own action")
+
+
+func test_controller_is_symmetrical() -> void:
+	_setup()
+	var body: Rect2 = _layout.controls_rect
+	t.check(absf((_layout.dpad_rect.position.x - body.position.x) - (body.end.x - _layout.face_rect.end.x)) < 0.5, "equal side padding")
+	t.check_eq(_layout.dpad_rect.size, _layout.face_rect.size, "same cluster size")
+	var pause: Rect2 = _layout.buttons[&"pause"]
+	t.check(absf(pause.get_center().x - body.get_center().x) < 0.5, "PAUSE centred between clusters")
+
+
+# The skin must run inside a real _draw callback, so the probe is a node in the
+# tree and the test waits for the engine to draw it.
+class SkinProbe extends Node2D:
+	var layout: GameLayout
+	var draws: int = 0
+
+	func _draw() -> void:
+		for alpha in [1.0, ControllerSkin.DISABLED_ALPHA]:
+			ControllerSkin.draw_body(self, layout.controls_rect, alpha)
+			for pressed in [false, true]:
+				ControllerSkin.draw_dpad(self, layout.dpad_rect, pressed, pressed, pressed, alpha)
+				ControllerSkin.draw_round_button(self, layout.buttons[&"rotate_cw"], ControllerSkin.FACE_CW, "O", pressed, alpha)
+				ControllerSkin.draw_pill(self, layout.pause_rect, ControllerSkin.PILL_PAUSE, "PAUSE", pressed, alpha)
+		draws += 1
+
+
+func test_skin_draws_inside_a_real_draw_callback() -> void:
+	_setup()
+	var probe := SkinProbe.new()
+	probe.layout = _layout
+	t.root.add_child(probe)
+	await t.process_frame
+	await t.process_frame
+	t.check(probe.draws > 0, "_draw ran, so the skin executed in a valid drawing context")
+	probe.queue_free()
 
 
 func test_touch_never_references_game_state() -> void:

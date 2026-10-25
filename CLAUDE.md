@@ -10,7 +10,7 @@ Strict layering; dependencies point down only.
 |---|---|---|
 | Logic | `src/logic/` | Pure gameplay and board state (`RefCounted`, no Nodes). Fully unit-testable. |
 | Session | `src/session/` | `GameSession`: owns board, active piece, upcoming queue, bag (later timers/score); consumes abstract commands. |
-| Render | `src/render/` | Draws state with procedural rectangles. Read-only. |
+| Render | `src/render/` | Draws state with procedural rectangles. Read-only. `RetroDraw` holds the palette and the one tile/panel renderer shared by board and previews. |
 | Input | `src/input/` | Device input -> abstract command signals. No game knowledge. |
 | HUD/UI | `src/ui/` | Score, next/hold, touch controls. Reads session, never mutates the board. |
 | Audio | `src/audio/` | `SfxSynth` generates the effects; `Sfx` plays them from session events. No asset files. |
@@ -27,7 +27,7 @@ Rules:
   (pure, tested) places every element from the usable area; `scenes/main.gd`
   feeds it the platform safe area on phones and re-applies on resize.
 - Touch: `TouchControls` hit-tests raw `InputEventScreenTouch/Drag` (GUI Buttons
-  only route one pointer) and emits `action_changed`; `ControllerSkin` (pure drawing helpers) paints the controller look; `main.gd` turns that into
+  only route one pointer) and emits `action_changed`; `ControllerSkin` (pure drawing helpers) paints the controller look (D-pad, X/O face buttons, PAUSE; no HOLD/DROP buttons, those are keyboard-only); `main.gd` turns that into
   `InputEventAction`s, so touch and keyboard share `InputHandler`. It must never
   reference the session or board. Desktop emulates touch from the mouse.
 - Pause/Game Over screens are `Overlay` (GUI buttons); `GameSession.paused`
@@ -79,3 +79,6 @@ and the high score live in `SaveData`; load failures fall back to defaults.
 ## Building for devices
 See `docs/BUILDING.md`. `export_presets.cfg` is committed without credentials;
 never commit keystores, provisioning profiles or team-specific secrets.
+
+## Fonts
+Pixelify Sans (OFL) in `assets/fonts/`, default theme font via `project.godot`; `RetroFont.bold()` for drawn/emphasised text. Hold slot is hidden on mobile (`GameLayout.compute(safe, show_hold)`).

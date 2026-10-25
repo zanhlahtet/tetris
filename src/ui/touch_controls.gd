@@ -14,10 +14,8 @@ signal action_changed(action: StringName, pressed: bool)
 ## Actions a finger may slide between while held (movement cluster).
 const SLIDE_ACTIONS: Array[StringName] = [&"move_left", &"move_right", &"soft_drop"]
 const LABELS: Dictionary = {
-	&"rotate_ccw": "CCW",
-	&"rotate_cw": "CW",
-	&"hold": "HOLD",
-	&"hard_drop": "DROP",
+	&"rotate_ccw": "X",
+	&"rotate_cw": "O",
 	&"pause": "PAUSE",
 }
 ## Round buttons accept touches slightly outside the drawn circle.
@@ -89,7 +87,7 @@ func _input(event: InputEvent) -> void:
 
 
 ## A finger sliding between movement buttons switches action; leaving the
-## button releases it. Sliding onto tap buttons (rotate, hold, drop) does nothing.
+## button releases it. Sliding onto tap buttons (rotate, pause) does nothing.
 func _on_drag(drag: InputEventScreenDrag) -> void:
 	var current: StringName = _touches[drag.index]
 	var target := action_at(drag.position)
@@ -128,7 +126,6 @@ func _draw() -> void:
 	ControllerSkin.draw_dpad(self, _dpad_rect, is_pressed(&"move_left"), is_pressed(&"move_right"), is_pressed(&"soft_drop"), alpha)
 	var colors: Dictionary = {
 		&"rotate_ccw": ControllerSkin.FACE_CCW, &"rotate_cw": ControllerSkin.FACE_CW,
-		&"hold": ControllerSkin.PILL_HOLD, &"hard_drop": ControllerSkin.PILL_DROP,
 		&"pause": ControllerSkin.PILL_PAUSE,
 	}
 	for action: StringName in colors:

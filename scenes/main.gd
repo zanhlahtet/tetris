@@ -127,7 +127,8 @@ func _inject_action(action: StringName, pressed: bool) -> void:
 
 
 func _apply_layout() -> void:
-	var layout := GameLayout.compute(_safe_rect())
+	var layout := GameLayout.compute(_safe_rect(), not OS.has_feature("mobile"))
+	_hold_view.visible = layout.show_hold
 	_board_view.position = layout.board_rect.position
 	_board_view.set_cell_size(layout.cell_size)
 	_hold_view.position = layout.hold_rect.position

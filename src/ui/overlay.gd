@@ -38,7 +38,10 @@ func _ready() -> void:
 	box.add_theme_constant_override("separation", 28)
 	center.add_child(box)
 	_title = _make_label(TITLE_FONT_SIZE, box)
+	_title.add_theme_font_override("font", RetroFont.bold())
+	_title.add_theme_color_override("font_color", RetroDraw.ACCENT)
 	_info = _make_label(INFO_FONT_SIZE, box)
+	_info.add_theme_color_override("font_color", RetroDraw.TEXT)
 	_resume = _make_button("RESUME", box)
 	_restart = _make_button("RESTART", box)
 	_sound = _make_button("", box)
@@ -90,5 +93,20 @@ func _make_button(text: String, parent: Control) -> Button:
 	button.custom_minimum_size = BUTTON_SIZE
 	button.focus_mode = Control.FOCUS_NONE
 	button.add_theme_font_size_override("font_size", BUTTON_FONT_SIZE)
+	button.add_theme_font_override("font", RetroFont.bold())
+	button.add_theme_color_override("font_color", RetroDraw.TEXT)
+	button.add_theme_stylebox_override("normal", _button_style(RetroDraw.PANEL_FILL, RetroDraw.PANEL_BORDER))
+	button.add_theme_stylebox_override("hover", _button_style(RetroDraw.PANEL_FILL, RetroDraw.PANEL_LIGHT))
+	button.add_theme_stylebox_override("pressed", _button_style(RetroDraw.PANEL_BORDER, RetroDraw.PANEL_LIGHT))
 	parent.add_child(button)
 	return button
+
+
+## Square-cornered pixel-style button face.
+func _button_style(fill: Color, border: Color) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = fill
+	box.set_border_width_all(4)
+	box.border_color = border
+	box.anti_aliasing = false
+	return box
