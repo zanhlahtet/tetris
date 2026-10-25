@@ -211,8 +211,52 @@ func test_sound_toggle_action() -> void:
 	h.free()
 
 
+func test_dpad_down_and_horizontal_zones() -> void:
+	_setup()
+	var d: Rect2 = _layout.dpad_rect
+	t.check_eq(_controls.action_at(d.position + d.size * Vector2(0.2, 0.45)), &"move_left", "left arm")
+	t.check_eq(_controls.action_at(d.position + d.size * Vector2(0.8, 0.45)), &"move_right", "right arm")
+	t.check_eq(_controls.action_at(d.position + d.size * Vector2(0.5, 0.85)), &"soft_drop", "down arm")
+	t.check_eq(_controls.action_at(d.position + d.size * Vector2(0.5, 0.1)), &"", "up arm is inert")
+	t.check_eq(_controls.action_at(d.position + d.size * Vector2(0.5, 0.45)) in [&"move_left", &"move_right"], true, "centre has no dead spot")
+
+
+func test_face_buttons_are_round_and_distinct() -> void:
+	_setup()
+	var ccw: Rect2 = _layout.buttons[&"rotate_ccw"]
+	var cw: Rect2 = _layout.buttons[&"rotate_cw"]
+	t.check(ccw.get_center().x < cw.get_center().x and ccw.get_center().y > cw.get_center().y, "CCW lower-left, CW upper-right")
+	# A square's corner is outside the circle: no touch there.
+	t.check_eq(_controls.action_at(ccw.position + Vector2(1, 1)), &"", "corner of the bounding square misses")
+	t.check_eq(_controls.action_at(ccw.get_center() + Vector2(ccw.size.x * 0.5, 0)), &"rotate_ccw", "edge of the circle hits")
+	t.check(ccw.get_center().distance_to(cw.get_center()) > ccw.size.x * 1.2, "circles do not touch")
+
+
+func test_hard_drop_is_the_largest_pill_and_apart_from_face_buttons() -> void:
+	_setup()
+	var drop: Rect2 = _layout.buttons[&"hard_drop"]
+	var hold: Rect2 = _layout.buttons[&"hold"]
+	t.check(drop.get_area() > hold.get_area(), "DROP bigger than HOLD")
+	t.check(drop.end.x + GameLayout.CLUSTER_GAP <= (_layout.buttons[&"rotate_ccw"] as Rect2).position.x, "DROP clear of the face buttons")
+
+
+func test_skin_draws_every_state_without_error() -> void:
+	# Smoke test: all states (normal, pressed, disabled) execute on a real canvas item.
+	var node := Node2D.new()
+	for alpha in [1.0, ControllerSkin.DISABLED_ALPHA]:
+		ControllerSkin.draw_body(node, _layout.controls_rect, alpha)
+		for pressed in [false, true]:
+			ControllerSkin.draw_dpad(node, _layout.dpad_rect, pressed, pressed, pressed, alpha)
+			ControllerSkin.draw_round_button(node, _layout.buttons[&"rotate_cw"], ControllerSkin.FACE_CW, "CW", pressed, alpha)
+			ControllerSkin.draw_pill(node, _layout.buttons[&"hard_drop"], ControllerSkin.PILL_DROP, "DROP", pressed, alpha)
+	node.free()
+	t.check(true, "drew")
+
+
 func test_touch_never_references_game_state() -> void:
 	# Structural guard: the controls script must not know about the session or board.
 	var source := FileAccess.get_file_as_string("res://src/ui/touch_controls.gd")
 	for forbidden in ["GameSession", "Board", "session."]:
 		t.check(not source.contains(forbidden), "touch_controls.gd mentions " + forbidden)
+	var skin := FileAccess.get_file_as_string("res://src/ui/controller_skin.gd")
+	t.check(not skin.contains("Input.") and not skin.contains("GameSession"), "skin is drawing only")

@@ -14,19 +14,14 @@ signal action_changed(action: StringName, pressed: bool)
 ## Actions a finger may slide between while held (movement cluster).
 const SLIDE_ACTIONS: Array[StringName] = [&"move_left", &"move_right", &"soft_drop"]
 const LABELS: Dictionary = {
-	&"move_left": "LEFT",
-	&"move_right": "RIGHT",
-	&"soft_drop": "SOFT",
 	&"rotate_ccw": "CCW",
 	&"rotate_cw": "CW",
 	&"hold": "HOLD",
 	&"hard_drop": "DROP",
 	&"pause": "PAUSE",
 }
-const FILL := Color(1, 1, 1, 0.10)
-const FILL_PRESSED := Color(1, 1, 1, 0.30)
-const OUTLINE := Color(1, 1, 1, 0.28)
-const TEXT_COLOR := Color(1, 1, 1, 0.85)
+## Round buttons accept touches slightly outside the drawn circle.
+const ROUND_HIT_SCALE: float = 1.15
 
 var enabled: bool = true:
 	set(value):
@@ -38,6 +33,8 @@ var enabled: bool = true:
 		queue_redraw()
 
 var _rects: Dictionary = {}
+var _dpad_rect: Rect2
+var _body_rect: Rect2
 var _hit_slop: float = 0.0
 var _touches: Dictionary = {}  # touch index -> action
 var _counts: Dictionary = {}  # action -> number of fingers holding it
@@ -45,15 +42,22 @@ var _counts: Dictionary = {}  # action -> number of fingers holding it
 
 func set_layout(layout: GameLayout) -> void:
 	_rects = layout.buttons.duplicate()
+	_dpad_rect = layout.dpad_rect
+	_body_rect = layout.controls_rect
 	_hit_slop = GameLayout.GAP / 2.0
 	queue_redraw()
 
 
-## Action under a point (button rects are grown by half the gap so there are
-## no dead zones between neighbours), or &"" if none.
+## Action under a point, or &"" if none. Rectangles are grown by half the gap
+## so there are no dead zones between neighbours; round buttons use a circle.
 func action_at(point: Vector2) -> StringName:
 	for action: StringName in _rects:
-		if (_rects[action] as Rect2).grow(_hit_slop).has_point(point):
+		var rect: Rect2 = _rects[action]
+		if GameLayout.ROUND_ACTIONS.has(action):
+			var radius: float = minf(rect.size.x, rect.size.y) / 2.0 * ROUND_HIT_SCALE + _hit_slop
+			if point.distance_to(rect.get_center()) <= radius:
+				return action
+		elif rect.grow(_hit_slop).has_point(point):
 			return action
 	return &""
 
@@ -119,11 +123,19 @@ func _release_touch(index: int) -> void:
 
 
 func _draw() -> void:
-	var font := ThemeDB.fallback_font
-	for action: StringName in _rects:
+	var alpha: float = 1.0 if enabled else ControllerSkin.DISABLED_ALPHA
+	ControllerSkin.draw_body(self, _body_rect, alpha)
+	ControllerSkin.draw_dpad(self, _dpad_rect, is_pressed(&"move_left"), is_pressed(&"move_right"), is_pressed(&"soft_drop"), alpha)
+	var colors: Dictionary = {
+		&"rotate_ccw": ControllerSkin.FACE_CCW, &"rotate_cw": ControllerSkin.FACE_CW,
+		&"hold": ControllerSkin.PILL_HOLD, &"hard_drop": ControllerSkin.PILL_DROP,
+		&"pause": ControllerSkin.PILL_PAUSE,
+	}
+	for action: StringName in colors:
+		if not _rects.has(action):
+			continue
 		var rect: Rect2 = _rects[action]
-		draw_rect(rect, FILL_PRESSED if is_pressed(action) else FILL)
-		draw_rect(rect, OUTLINE, false, 2.0)
-		var font_size: int = clampi(int(rect.size.y * 0.3), 14, 40)
-		var baseline := Vector2(rect.position.x, rect.position.y + rect.size.y / 2.0 + font_size * 0.35)
-		draw_string(font, baseline, LABELS[action], HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size, TEXT_COLOR)
+		if GameLayout.ROUND_ACTIONS.has(action):
+			ControllerSkin.draw_round_button(self, rect, colors[action], LABELS[action], is_pressed(action), alpha)
+		else:
+			ControllerSkin.draw_pill(self, rect, colors[action], LABELS[action], is_pressed(action), alpha)

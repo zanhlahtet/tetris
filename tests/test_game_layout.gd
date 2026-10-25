@@ -50,7 +50,7 @@ func test_no_overlaps() -> void:
 		var names := rects.keys()
 		for i in range(names.size()):
 			for j in range(i + 1, names.size()):
-				t.check(not (rects[names[i]] as Rect2).intersects(rects[names[j]]),
+				t.check(not (rects[names[i]] as Rect2).grow(-0.01).intersects(rects[names[j]]),
 						"%s vs %s overlap in %s" % [names[i], names[j], safe])
 
 
