@@ -19,6 +19,8 @@ const CAPTION_HEIGHT: float = 30.0
 const PANEL_GAP: float = 24.0
 const MAX_PREVIEW_CELL: int = 32
 const PAUSE_HEIGHT: float = 64.0
+## Score, lines, level, best.
+const STAT_COUNT: int = 4
 ## Lines of text reserved for the last-lock award (action, B2B, combo, perfect clear).
 const AWARD_LINES: int = 6
 
@@ -67,7 +69,7 @@ static func compute(safe: Rect2) -> GameLayout:
 	l.hold_caption_pos = Vector2(left_x, board_pos.y)
 	l.hold_rect = Rect2(left_x, board_pos.y + CAPTION_HEIGHT, 4.0 * pc, 3.0 * pc)
 	l.stat_font_size = clampi(int(inner / 5.0), 14, 34)
-	l.stats_rect = Rect2(left_x, l.hold_rect.end.y + PANEL_GAP, inner, 3.0 * l.stat_block_height())
+	l.stats_rect = Rect2(left_x, l.hold_rect.end.y + PANEL_GAP, inner, STAT_COUNT * l.stat_block_height())
 
 	l.award_font_size = maxi(12, l.stat_font_size - 4)
 	l.award_rect = Rect2(left_x, l.stats_rect.end.y + PANEL_GAP / 2.0, inner, AWARD_LINES * l.award_font_size * 1.3)

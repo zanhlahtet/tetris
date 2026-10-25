@@ -6,6 +6,8 @@ extends CanvasLayer
 
 signal resume_pressed
 signal restart_pressed
+signal sound_toggled
+signal ghost_toggled
 
 const TITLE_FONT_SIZE: int = 64
 const INFO_FONT_SIZE: int = 32
@@ -13,11 +15,14 @@ const BUTTON_FONT_SIZE: int = 40
 const BUTTON_SIZE := Vector2(340, 96)
 
 var _session: GameSession
+var _save: SaveData
 var _dim: ColorRect
 var _title: Label
 var _info: Label
 var _resume: Button
 var _restart: Button
+var _sound: Button
+var _ghost: Button
 
 
 func _ready() -> void:
@@ -36,27 +41,39 @@ func _ready() -> void:
 	_info = _make_label(INFO_FONT_SIZE, box)
 	_resume = _make_button("RESUME", box)
 	_restart = _make_button("RESTART", box)
+	_sound = _make_button("", box)
+	_ghost = _make_button("", box)
+	_sound.pressed.connect(sound_toggled.emit)
+	_ghost.pressed.connect(ghost_toggled.emit)
 	_resume.pressed.connect(resume_pressed.emit)
 	_restart.pressed.connect(restart_pressed.emit)
 	_dim.visible = false
 
 
-func bind(session: GameSession) -> void:
+func bind(session: GameSession, save: SaveData) -> void:
 	_session = session
+	_save = save
 
 
 func _process(_delta: float) -> void:
-	if _session == null:
+	if _session == null or _save == null:
 		return
 	_dim.visible = _session.game_over or _session.paused
 	if _session.game_over:
 		_title.text = "GAME OVER"
-		_info.text = "SCORE %d\nLINES %d   LEVEL %d" % [_session.stats.score, _session.stats.lines, _session.stats.level]
+		var record: String = "NEW BEST!" if _session.stats.score >= _save.high_score and _session.stats.score > 0 else "BEST %d" % _save.high_score
+		_info.text = "SCORE %d\nLINES %d   LEVEL %d\n%s" % [_session.stats.score, _session.stats.lines, _session.stats.level, record]
 		_resume.visible = false
+		_sound.visible = false
+		_ghost.visible = false
 	elif _session.paused:
 		_title.text = "PAUSED"
 		_info.text = ""
 		_resume.visible = true
+		_sound.visible = true
+		_ghost.visible = true
+		_sound.text = "SOUND: %s" % ("ON" if _save.sound_enabled else "OFF")
+		_ghost.text = "GHOST: %s" % ("ON" if _save.ghost_enabled else "OFF")
 
 
 func _make_label(font_size: int, parent: Control) -> Label:

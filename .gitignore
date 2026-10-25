@@ -9,7 +9,14 @@ build/
 *.apk
 *.aab
 *.ipa
-export_presets.cfg
+# export_presets.cfg is committed on purpose (no credentials in it); secrets live in
+# Godot's editor settings, .godot/export_credentials.cfg, or environment variables.
+export_credentials.cfg
+*.jks
+*.p12
+*.p8
+*.mobileprovision
+*.provisionprofile
 *.keystore
 
 # Mono / misc

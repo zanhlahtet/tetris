@@ -6,6 +6,18 @@ extends RefCounted
 ## fully testable without rendering. Consumes abstract commands; never touches
 ## rendering or input devices.
 
+## Presentation events. Emitted after the state change they describe; the
+## session never depends on whoever listens (sound, effects).
+signal moved
+signal rotated
+signal held
+## The piece was hard-dropped: its landing cells and how many rows it fell.
+signal hard_dropped(cells: Array[Vector2i], distance: int)
+signal locked
+## Rows (pre-collapse indices) removed by the lock that just happened.
+signal lines_cleared(rows: Array[int])
+signal game_ended
+
 const PREVIEW_COUNT: int = 5
 const LOCK_DELAY_MS: int = 500
 ## Max grounded move/rotate resets of the lock timer per piece.
@@ -101,7 +113,7 @@ func _spawn(type: int) -> bool:
 	lock_resets = 0
 	if not board.can_place(piece.cells()):
 		active = null
-		game_over = true
+		_end_game()
 		return false
 	active = piece
 	return true
@@ -123,6 +135,7 @@ func hold() -> bool:
 	else:
 		_spawn(incoming)
 	hold_used = true
+	held.emit()
 	return true
 
 
@@ -184,6 +197,7 @@ func hard_drop() -> void:
 	if dropped > 0:
 		active.spun = false
 	stats.add_hard_drop(dropped)
+	hard_dropped.emit(active.cells(), dropped)
 	_lock_piece()
 
 
@@ -252,6 +266,7 @@ func _move_horizontal(direction: int) -> bool:
 		return false
 	active.origin.x += direction
 	active.spun = false
+	moved.emit()
 	_after_move(was_grounded)
 	return true
 
@@ -276,6 +291,7 @@ func _rotate(step: int) -> bool:
 			active.rotation = to
 			active.spun = true
 			active.kick_index = i
+			rotated.emit()
 			_after_move(was_grounded)
 			return true
 	return false
@@ -291,10 +307,10 @@ func _after_move(was_grounded: bool) -> void:
 
 
 func _can_move(dx: int, dy: int) -> bool:
-	var moved: Array[Vector2i] = []
+	var shifted: Array[Vector2i] = []
 	for c in active.cells():
-		moved.append(c + Vector2i(dx, dy))
-	return board.can_place(moved)
+		shifted.append(c + Vector2i(dx, dy))
+	return board.can_place(shifted)
 
 
 ## Writes the piece into the board, clears and scores lines, then spawns the
@@ -310,14 +326,21 @@ func _lock_piece() -> void:
 			lock_out = false
 	active = null
 	hold_used = false
+	locked.emit()
 	if lock_out:
-		game_over = true
+		_end_game()
 		return
 	var full: Array[int] = board.full_rows()
 	if not full.is_empty():
 		board.clear_rows(full)
+		lines_cleared.emit(full)
 	last_lock = stats.register_lock(full.size(), spin, not full.is_empty() and board.is_clear())
 	spawn_next()
+
+
+func _end_game() -> void:
+	game_over = true
+	game_ended.emit()
 
 
 func _is_playing() -> bool:

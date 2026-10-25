@@ -181,6 +181,36 @@ func test_action_events_reach_input_handler_signals() -> void:
 	h.free()
 
 
+func test_release_all_clears_held_inputs() -> void:
+	var h := InputHandler.new()
+	var dirs: Array[int] = []
+	var soft: Array[bool] = []
+	h.direction_changed.connect(func(d: int) -> void: dirs.append(d))
+	h.soft_drop_changed.connect(func(on: bool) -> void: soft.append(on))
+	h._unhandled_input(_action_event(&"move_left", true))
+	h.release_all()
+	t.check_eq(dirs, [-1, 0] as Array[int], "direction released")
+	t.check_eq(soft, [false] as Array[bool], "soft drop released")
+	# A stale release after resume must not re-trigger anything odd.
+	h._unhandled_input(_action_event(&"move_left", false))
+	t.check_eq(dirs, [-1, 0] as Array[int], "no duplicate release")
+	# Holding right alone after a full reset works normally.
+	h._unhandled_input(_action_event(&"move_right", true))
+	t.check_eq(dirs, [-1, 0, 1] as Array[int], "fresh press accepted")
+	h.free()
+
+
+func test_sound_toggle_action() -> void:
+	t.check(InputMap.has_action("toggle_sound"), "defined")
+	t.check(not InputMap.action_get_events("toggle_sound").is_empty(), "bound")
+	var h := InputHandler.new()
+	var count := [0]
+	h.toggle_sound_pressed.connect(func() -> void: count[0] += 1)
+	h._unhandled_input(_action_event(&"toggle_sound", true))
+	t.check_eq(count[0], 1, "signal")
+	h.free()
+
+
 func test_touch_never_references_game_state() -> void:
 	# Structural guard: the controls script must not know about the session or board.
 	var source := FileAccess.get_file_as_string("res://src/ui/touch_controls.gd")
