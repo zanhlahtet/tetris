@@ -41,6 +41,7 @@ func test_double_line_clear() -> void:
 	var s := _session(Tetromino.Type.O, Vector2i(3, 19))
 	_fill_row(s, 38, [4, 5])
 	_fill_row(s, 39, [4, 5])
+	s.board.set_cell(0, 30, 7)  # stray block: keeps this from being a perfect clear
 	s.hard_drop()
 	t.check_eq(s.stats.lines, 2, "two lines")
 	t.check_eq(s.stats.score, 300 + O_DROP_POINTS, "300 + hard drop")
@@ -54,12 +55,13 @@ func test_triple_and_four_line_clears() -> void:
 		var s := _session(Tetromino.Type.I, Vector2i(-2, 10), 1)
 		for y in range(40 - rows, 40):
 			_fill_row(s, y, [0])
+		s.board.set_cell(9, 20, 7)  # stray block: keeps this from being a perfect clear
 		# 3 rows: the I's top block remains and falls onto the floor.
 		s.hard_drop()
 		var drop_cells := 40 - 4 - 10  # origin.y 10 -> 36
 		t.check_eq(s.stats.lines, rows, "%d lines" % rows)
 		t.check_eq(s.stats.score, (500 if rows == 3 else 800) + drop_cells * 2, "%d-line score" % rows)
-		var leftover := 0 if rows == 4 else 1
+		var leftover := 1 if rows == 4 else 2
 		var count := 0
 		for y in range(Board.TOTAL_ROWS):
 			for x in range(Board.WIDTH):
@@ -82,7 +84,9 @@ func test_clear_scored_at_current_level_and_gravity_follows() -> void:
 	s.active = ActivePiece.new(Tetromino.Type.O)
 	var before := s.stats.score
 	s.hard_drop()
-	t.check_eq(s.stats.score - before, 100 * 2 + O_DROP_POINTS, "level-2 multiplier")
+	# 100 x level 2, the drop, and a combo bonus (50 x 1 x level 2): the previous
+	# lock also cleared a line.
+	t.check_eq(s.stats.score - before, 100 * 2 + O_DROP_POINTS + 50 * 1 * 2, "level-2 multiplier")
 
 
 func test_gravity_uses_level() -> void:

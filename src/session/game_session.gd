@@ -30,6 +30,8 @@ var held_type: int = 0
 var hold_used: bool = false
 ## While true, ticks and all commands are ignored (state is untouched).
 var paused: bool = false
+## What the most recent lock scored (null before the first lock).
+var last_lock: ScoreKeeper.LockResult = null
 ## True after block-out (spawn blocked) or lock-out (piece locked entirely in
 ## the hidden rows). No further ticking or commands apply until restart().
 var game_over: bool = false
@@ -68,6 +70,7 @@ func _reset_state(seed_value: int, use_seed: bool) -> void:
 	held_type = 0
 	hold_used = false
 	paused = false
+	last_lock = null
 	game_over = false
 	lock_resets = 0
 	_gravity_ms = 0
@@ -178,6 +181,8 @@ func hard_drop() -> void:
 	while _can_move(0, 1):
 		active.origin.y += 1
 		dropped += 1
+	if dropped > 0:
+		active.spun = false
 	stats.add_hard_drop(dropped)
 	_lock_piece()
 
@@ -231,6 +236,7 @@ func _tick_vertical(delta_ms: int) -> void:
 	while _gravity_ms >= interval:
 		_gravity_ms -= interval
 		active.origin.y += 1
+		active.spun = false
 		if _soft_drop:
 			stats.add_soft_drop(1)
 		if is_grounded():
@@ -245,6 +251,7 @@ func _move_horizontal(direction: int) -> bool:
 	if not _can_move(direction, 0):
 		return false
 	active.origin.x += direction
+	active.spun = false
 	_after_move(was_grounded)
 	return true
 
@@ -261,11 +268,14 @@ func _rotate(step: int) -> bool:
 		active.rotation = to
 		return true
 	var was_grounded: bool = is_grounded()
-	for offset in Srs.kick_offsets(active.type, from, to):
-		var new_origin: Vector2i = active.origin + offset
+	var kicks: Array[Vector2i] = Srs.kick_offsets(active.type, from, to)
+	for i in range(kicks.size()):
+		var new_origin: Vector2i = active.origin + kicks[i]
 		if board.can_place(active.cells_at(new_origin, to)):
 			active.origin = new_origin
 			active.rotation = to
+			active.spun = true
+			active.kick_index = i
 			_after_move(was_grounded)
 			return true
 	return false
@@ -291,6 +301,7 @@ func _can_move(dx: int, dy: int) -> bool:
 ## next piece. Lock-out: a piece locked entirely above the visible rows ends
 ## the game immediately.
 func _lock_piece() -> void:
+	var spin: int = TSpin.detect(board, active)
 	var locked_cells: Array[Vector2i] = active.cells()
 	var lock_out: bool = true
 	for c in locked_cells:
@@ -305,7 +316,7 @@ func _lock_piece() -> void:
 	var full: Array[int] = board.full_rows()
 	if not full.is_empty():
 		board.clear_rows(full)
-		stats.add_line_clear(full.size())
+	last_lock = stats.register_lock(full.size(), spin, not full.is_empty() and board.is_clear())
 	spawn_next()
 
 

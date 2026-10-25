@@ -6,6 +6,11 @@ extends RefCounted
 var type: int
 var rotation: int = 0
 var origin: Vector2i
+## True while the piece's most recent successful action was a rotation (any
+## move or fall clears it). Needed for T-Spin detection.
+var spun: bool = false
+## Index (0-4) of the SRS kick test used by that rotation.
+var kick_index: int = 0
 
 
 func _init(piece_type: int) -> void:

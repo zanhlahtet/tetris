@@ -83,3 +83,11 @@ func clear_rows(rows: Array[int]) -> void:
 	for y in range(write_y + 1):
 		for x in range(WIDTH):
 			_cells[y * WIDTH + x] = EMPTY
+
+
+## True if no cell on the board (hidden rows included) is occupied.
+func is_clear() -> bool:
+	for v in _cells:
+		if v != EMPTY:
+			return false
+	return true

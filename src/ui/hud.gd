@@ -5,6 +5,7 @@ extends CanvasLayer
 ## never mutates it.
 
 const CAPTION_FONT_SIZE: int = 20
+const AWARD_COLOR := Color(1.0, 0.85, 0.35)
 
 var _session: GameSession
 var _hold_caption: Label
@@ -12,6 +13,7 @@ var _next_caption: Label
 var _score: Label
 var _lines: Label
 var _level: Label
+var _award: Label
 
 
 func _ready() -> void:
@@ -20,6 +22,9 @@ func _ready() -> void:
 	_score = _make_label("")
 	_lines = _make_label("")
 	_level = _make_label("")
+	_award = _make_label("")
+	_award.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_award.add_theme_color_override("font_color", AWARD_COLOR)
 	_hold_caption.add_theme_font_size_override("font_size", CAPTION_FONT_SIZE)
 	_next_caption.add_theme_font_size_override("font_size", CAPTION_FONT_SIZE)
 
@@ -37,6 +42,9 @@ func apply_layout(layout: GameLayout) -> void:
 	for i in range(labels.size()):
 		labels[i].add_theme_font_size_override("font_size", layout.stat_font_size)
 		labels[i].position = layout.stats_rect.position + Vector2(0, i * block)
+	_award.add_theme_font_size_override("font_size", layout.award_font_size)
+	_award.position = layout.award_rect.position
+	_award.size = layout.award_rect.size
 
 
 func _process(_delta: float) -> void:
@@ -49,6 +57,7 @@ func _refresh() -> void:
 	_score.text = "SCORE\n%d" % _session.stats.score
 	_lines.text = "LINES\n%d" % _session.stats.lines
 	_level.text = "LEVEL\n%d" % _session.stats.level
+	_award.text = _session.last_lock.describe() if _session.last_lock != null else ""
 
 
 func _make_label(text: String) -> Label:

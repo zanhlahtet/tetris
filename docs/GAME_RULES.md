@@ -69,14 +69,66 @@ Pausing (button, Esc/P, or the app losing focus) freezes all time and input;
 a Pause overlay offers Resume and Restart, and Game Over shows the final
 score with Restart.
 
-## Scoring (`src/logic/score_keeper.gd`)
-- Soft drop: 1 point per cell fallen while soft drop is held. Hard drop: 2
-  points per cell. Natural gravity falls score nothing.
-- Line clears, multiplied by the level in effect *before* the clear:
-  single 100, double 300, triple 500, four lines 800.
-- Lines clear instantly on lock (no clear animation or entry delay yet).
-- T-spin, back-to-back and combo scoring: **(TBD)**, M7; `ScoreKeeper` is the
-  extension point.
+## Scoring (`src/logic/score_keeper.gd`, `src/logic/t_spin.gd`)
+Follows the Tetris Guideline scoring as publicly documented (tetris.wiki).
+All line-based points are multiplied by the level in effect *before* the lock
+(a clear that levels you up is still paid at the old level). Every lock is
+scored exactly once, by `ScoreKeeper.register_lock()`.
+
+| Action | Base points |
+|---|---|
+| Soft drop | 1 per cell fallen while held (gravity falls score nothing) |
+| Hard drop | 2 per cell |
+| Single / Double / Triple / Tetris | 100 / 300 / 500 / 800 |
+| T-Spin Mini (0 / 1 / 2 lines) | 100 / 200 / 400 |
+| T-Spin (0 / 1 / 2 / 3 lines) | 400 / 800 / 1200 / 1600 |
+| Combo | 50 x combo x level, from the second consecutive clearing lock |
+| Perfect clear (1 / 2 / 3 / 4 lines) | 800 / 1200 / 1800 / 2000, **added** to the clear score |
+| Back-to-Back Tetris perfect clear | 3200 instead of 2000 |
+
+**T-Spin detection (three-corner rule).** A lock is a T-Spin when the piece is
+a T, its last successful action was a rotation, and at least three of the four
+corners of its 3x3 box are occupied (locked cells, walls and the floor all
+count). It is a full T-Spin if both *front* corners (the two on the side the
+T's nub points to) are occupied, otherwise a Mini. If the rotation used the
+fifth SRS kick test (the 1x2 kick) a Mini is promoted to a full T-Spin. Any
+horizontal move, gravity/soft-drop step or hard drop that actually moves the
+piece after the rotation cancels the spin; a hard drop of zero cells (piece
+already resting) does not. Hold gives a fresh piece, so the spin never carries.
+
+**Back-to-Back.** Difficult clears are Tetrises and any T-Spin or T-Spin Mini
+that clears at least one line. The first starts the chain; each following
+difficult clear scores 1.5x its base points (before the level multiplier and
+combo bonus). A Single, Double or Triple without a T-Spin breaks the chain.
+Locks that clear no lines (including T-Spins with no lines) neither break nor
+extend it.
+
+**Combo.** The counter is -1 with no chain, 0 on the first clearing lock, then
+increments on each consecutive clearing lock; any lock that clears nothing
+resets it. The bonus is 50 x counter x level, added on top of the action score
+(including T-Spins and perfect clears).
+
+**Perfect clear.** Detected after the lines are removed: the whole board,
+including the hidden rows, is empty. A perfect clear needs at least one cleared
+line.
+
+### Intentional differences from other published implementations
+- **No "immobile" test.** Some games (e.g. TETR.IO) require the T to be unable
+  to move after the spin; this game uses the Guideline three-corner rule only.
+- **Perfect clear is additive.** The bonus is paid in addition to the normal
+  clear points (Tetris Guideline / modern console games). Some games replace
+  the line score instead. The Back-to-Back Tetris bonus (3200) replaces the 2000
+  bonus, while the Tetris itself still gets its own 1.5x.
+- **Zero-line T-Spins** score (100/400 x level) but do not touch Back-to-Back and
+  do reset the combo (a lock without a clear).
+- **T-Spin Mini with 3+ lines** cannot occur under SRS; if it were reported it
+  would be scored as a full T-Spin.
+- **Scores are not capped,** and lock-outs (game over) award nothing.
+- **Hard drop keeps a spin only if the piece does not move.** Rotating in the air
+  and then hard-dropping is not a T-Spin even if the landing spot would be.
+- The perfect-clear and Back-to-Back scores, and the 1.5x on mini/T-Spin
+  clears, follow the Guideline tables; where games disagree this file is the
+  reference for tests.
 
 ## Marathon
 - Start at level 1; level = 1 + total lines / 10.
