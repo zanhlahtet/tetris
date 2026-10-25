@@ -26,12 +26,25 @@ are to be finalised in the milestone that implements them.
 - Ghost piece shows the hard-drop landing position.
 
 ## Gravity, locking
-- Gravity speed set by level using the Guideline curve.
-- Soft drop: **(decision)** fixed multiple of gravity (20x), no score cap tweaks.
-- Hard drop locks immediately.
-- Lock delay: 0.5 s, resets on successful move/rotate, with **(decision)**
-  a cap of 15 resets per piece (step-reset / "extended placement").
-- Auto-repeat (DAS/ARR) for horizontal movement; touch values **(TBD)**.
+- Gravity: 1000 ms per row at level 1 (`GameSession.gravity_interval_ms`); the
+  Guideline level curve arrives with levels. Timing is integer milliseconds.
+- Soft drop: **(decision)** 20x gravity while held.
+- Hard drop moves to the lowest valid position and locks immediately.
+- Lock delay: 500 ms starting when the piece lands. A successful move or
+  rotation while the piece is still grounded resets the timer, up to
+  **15 resets per piece** (**decision**: the counter is never refilled by
+  falling lower). After 15 the timer keeps running even if the piece moves.
+  Moves while airborne cost nothing.
+- A locked piece is written to the board and the next piece spawns at once.
+  If the spawn is blocked, the game is over. (Line clears: later milestone.)
+- DAS/ARR (`GameSession.das_ms` / `arr_ms`): a direction press moves one cell
+  immediately; after **DAS 167 ms** it repeats every **ARR 33 ms** (about
+  10 and 2 frames at 60 Hz). ARR 0 slides to the wall. Touch values **(TBD)**.
+- Holding a direction carries over to the next piece without a new DAS wait.
+
+## Controls (desktop)
+Input Map actions in `project.godot`: `move_left` (Left), `move_right`
+(Right), `soft_drop` (Down), `hard_drop` (Space). Latest direction pressed wins.
 
 ## Scoring (Guideline)
 - Soft drop: 1 point per cell. Hard drop: 2 points per cell.
