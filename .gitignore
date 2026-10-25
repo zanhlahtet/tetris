@@ -1,0 +1,24 @@
+# Godot 4
+.godot/
+.import/
+*.translation
+
+# Exports
+export/
+build/
+*.apk
+*.aab
+*.ipa
+export_presets.cfg
+*.keystore
+
+# Mono / misc
+.mono/
+data_*/
+mono_crash.*.json
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
