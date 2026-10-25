@@ -26,7 +26,7 @@ func _safe_rects() -> Array[Rect2]:
 func _named_rects(l: GameLayout) -> Dictionary:
 	var rects := {
 		"board": l.board_rect, "hold": l.hold_rect, "stats": l.stats_rect,
-		"next": l.next_rect, "pause": l.pause_rect,
+		"next": l.next_rect, "pause": l.pause_rect, "award": l.award_rect,
 	}
 	for action: StringName in l.buttons:
 		if action != &"pause":

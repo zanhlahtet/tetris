@@ -19,6 +19,8 @@ const CAPTION_HEIGHT: float = 30.0
 const PANEL_GAP: float = 24.0
 const MAX_PREVIEW_CELL: int = 32
 const PAUSE_HEIGHT: float = 64.0
+## Lines of text reserved for the last-lock award (action, B2B, combo, perfect clear).
+const AWARD_LINES: int = 6
 
 var cell_size: int = 0
 var board_rect: Rect2
@@ -29,6 +31,8 @@ var hold_rect: Rect2
 var next_caption_pos: Vector2
 var next_rect: Rect2
 var stats_rect: Rect2
+var award_rect: Rect2
+var award_font_size: int = 0
 var stat_font_size: int = 0
 var pause_rect: Rect2
 ## Touch button rectangles keyed by Input Map action name.
@@ -64,6 +68,9 @@ static func compute(safe: Rect2) -> GameLayout:
 	l.hold_rect = Rect2(left_x, board_pos.y + CAPTION_HEIGHT, 4.0 * pc, 3.0 * pc)
 	l.stat_font_size = clampi(int(inner / 5.0), 14, 34)
 	l.stats_rect = Rect2(left_x, l.hold_rect.end.y + PANEL_GAP, inner, 3.0 * l.stat_block_height())
+
+	l.award_font_size = maxi(12, l.stat_font_size - 4)
+	l.award_rect = Rect2(left_x, l.stats_rect.end.y + PANEL_GAP / 2.0, inner, AWARD_LINES * l.award_font_size * 1.3)
 
 	l.next_caption_pos = Vector2(right_x, board_pos.y)
 	l.next_rect = Rect2(right_x, board_pos.y + CAPTION_HEIGHT, 4.0 * pc, 15.0 * pc)
