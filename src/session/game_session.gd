@@ -6,7 +6,7 @@ extends RefCounted
 ## fully testable without rendering. Consumes abstract commands; never touches
 ## rendering or input devices.
 
-const PREVIEW_COUNT: int = 3
+const PREVIEW_COUNT: int = 5
 const LOCK_DELAY_MS: int = 500
 ## Max grounded move/rotate resets of the lock timer per piece.
 const MAX_LOCK_RESETS: int = 15
@@ -24,6 +24,10 @@ var stats: ScoreKeeper
 var active: ActivePiece = null
 ## Upcoming piece types, next piece first. Always holds PREVIEW_COUNT entries.
 var queue: Array[int] = []
+## Piece type in the hold slot, or 0 if empty.
+var held_type: int = 0
+## True once the current piece has used its hold; cleared when a piece locks.
+var hold_used: bool = false
 ## True after block-out (spawn blocked) or lock-out (piece locked entirely in
 ## the hidden rows). No further ticking or commands apply until restart().
 var game_over: bool = false
@@ -59,6 +63,8 @@ func _reset_state(seed_value: int, use_seed: bool) -> void:
 	queue.clear()
 	_fill_queue()
 	active = null
+	held_type = 0
+	hold_used = false
 	game_over = false
 	lock_resets = 0
 	_gravity_ms = 0
@@ -75,8 +81,15 @@ func gravity_interval_ms() -> int:
 ## Takes the next piece from the queue and spawns it. Returns false (and leaves
 ## no active piece) if the spawn position is blocked, which ends the game.
 func spawn_next() -> bool:
-	var piece := ActivePiece.new(queue.pop_front())
+	var type: int = queue.pop_front()
 	_fill_queue()
+	return _spawn(type)
+
+
+## Spawns a fresh piece of the given type in its canonical orientation and
+## position, resetting per-piece timers. Blocked spawn ends the game.
+func _spawn(type: int) -> bool:
+	var piece := ActivePiece.new(type)
 	_gravity_ms = 0
 	_lock_ms = 0
 	lock_resets = 0
@@ -86,6 +99,41 @@ func spawn_next() -> bool:
 		return false
 	active = piece
 	return true
+
+
+## Swaps the active piece with the hold slot. Allowed once per piece (until it
+## locks). An empty slot takes the piece and spawns the next queued one; an
+## occupied slot swaps without touching the queue. The incoming piece spawns in
+## its canonical orientation and position; if that is blocked the game ends.
+## Returns true if the hold happened.
+func hold() -> bool:
+	if not _is_playing() or hold_used:
+		return false
+	var outgoing: int = active.type
+	var incoming: int = held_type
+	held_type = outgoing
+	if incoming == 0:
+		spawn_next()
+	else:
+		_spawn(incoming)
+	hold_used = true
+	return true
+
+
+## Where the active piece would land on a hard drop. Visual aid only: pure
+## query, changes no state. Empty when there is no active piece.
+func ghost_cells() -> Array[Vector2i]:
+	if active == null:
+		return []
+	var drop: int = 0
+	while true:
+		var moved: Array[Vector2i] = []
+		for c in active.cells():
+			moved.append(c + Vector2i(0, drop + 1))
+		if not board.can_place(moved):
+			break
+		drop += 1
+	return active.cells_at(active.origin + Vector2i(0, drop), active.rotation)
 
 
 ## True if the active piece cannot move down.
@@ -237,6 +285,7 @@ func _lock_piece() -> void:
 		if board.is_visible_row(c.y):
 			lock_out = false
 	active = null
+	hold_used = false
 	if lock_out:
 		game_over = true
 		return

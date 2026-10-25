@@ -6,6 +6,7 @@ extends CanvasLayer
 
 const FONT_SIZE: int = 36
 const BANNER_FONT_SIZE: int = 56
+const CAPTION_FONT_SIZE: int = 24
 const MARGIN: float = 40.0
 const BASE_WIDTH: float = 720.0
 const BOARD_CENTER := Vector2(360, 640)  # matches BoardView placement in main.gd
@@ -25,6 +26,12 @@ func _ready() -> void:
 	_lines.position = Vector2(MARGIN, 85)
 	_level.position = Vector2(BASE_WIDTH - MARGIN - 300, 30)
 	_level.size = Vector2(300, 50)
+	var hold_title := _make_label(CAPTION_FONT_SIZE, HORIZONTAL_ALIGNMENT_LEFT)
+	hold_title.text = "HOLD"
+	hold_title.position = Vector2(12, 160)
+	var next_title := _make_label(CAPTION_FONT_SIZE, HORIZONTAL_ALIGNMENT_LEFT)
+	next_title.text = "NEXT"
+	next_title.position = Vector2(612, 160)
 	_banner = _make_label(BANNER_FONT_SIZE, HORIZONTAL_ALIGNMENT_CENTER)
 	_banner.text = "GAME OVER\nPress R to restart"
 	_banner.size = Vector2(BASE_WIDTH, 200)
