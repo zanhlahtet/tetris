@@ -66,7 +66,7 @@ func test_board_is_the_visual_focus() -> void:
 
 func test_base_resolution_cell_size() -> void:
 	var l := GameLayout.compute(Rect2(0, 0, 720, 1280))
-	t.check_eq(l.cell_size, 49, "49px cells at 720x1280")
+	t.check_eq(l.cell_size, 48, "48px cells at 720x1280")
 
 
 func test_board_centered_horizontally() -> void:

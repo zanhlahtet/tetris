@@ -13,13 +13,18 @@ const MAX_CONTENT_WIDTH: float = 720.0
 const TOP_MARGIN: float = 12.0
 const BOTTOM_MARGIN: float = 12.0
 const GAP: float = 12.0
+## How far the D-pad hit zones extend past the drawn cross.
+const DPAD_HIT_MARGIN: float = 10.0
 const SIDE_MARGIN: float = 12.0
 const MIN_COLUMN_WIDTH: float = 112.0
 const CAPTION_HEIGHT: float = 30.0
 const PANEL_GAP: float = 24.0
 const MAX_PREVIEW_CELL: int = 32
-const PAUSE_HEIGHT: float = 56.0
-const PAUSE_MAX_WIDTH: float = 170.0
+const PAUSE_HEIGHT: float = 66.0
+const PAUSE_MAX_WIDTH: float = 180.0
+## PAUSE width as a fraction of the gap between the D-pad and face clusters;
+## the rest keeps its hit region clear of the neighbouring X button.
+const PAUSE_WIDTH_FRACTION: float = 0.82
 ## Score, lines, level, best.
 const STAT_COUNT: int = 4
 ## Inner padding of the statistics panel.
@@ -28,7 +33,11 @@ const STATS_PADDING: float = 6.0
 const AWARD_LINES: int = 6
 ## Controller block: inner padding, D-pad edge as a fraction of the content
 ## width, and face-button diameter as a fraction of the D-pad edge.
-const CONTROLS_PADDING: float = 20.0
+const CONTROLS_PADDING: float = 12.0
+## Controller block height as a fraction of the usable height, and its limits.
+const CONTROLS_HEIGHT_FRACTION: float = 0.215
+const CONTROLS_MIN_HEIGHT: float = 200.0
+const CONTROLS_MAX_HEIGHT: float = 280.0
 const DPAD_WIDTH_FRACTION: float = 0.34
 const FACE_DIAMETER_FRACTION: float = 0.5
 ## Buttons drawn and hit-tested as circles inscribed in their rectangle.
@@ -52,7 +61,8 @@ var pause_rect: Rect2
 ## Bounding squares of the D-pad cross and of the face-button cluster.
 var dpad_rect: Rect2
 var face_rect: Rect2
-## Touch button rectangles keyed by Input Map action name.
+## Touch hit rectangles keyed by Input Map action name (the D-pad entries are
+## hit zones, the others the drawn button).
 var buttons: Dictionary = {}
 
 
@@ -64,7 +74,7 @@ static func compute(safe: Rect2, show_hold: bool = true) -> GameLayout:
 	var y0: float = safe.position.y
 	var height: float = safe.size.y
 
-	var controls_h: float = clampf(height * 0.19, 190.0, 250.0)
+	var controls_h: float = clampf(height * CONTROLS_HEIGHT_FRACTION, CONTROLS_MIN_HEIGHT, CONTROLS_MAX_HEIGHT)
 	var avail_h: float = height - TOP_MARGIN - GAP - controls_h - BOTTOM_MARGIN
 	var avail_w: float = width - 2.0 * MIN_COLUMN_WIDTH
 	l.cell_size = maxi(8, int(floorf(minf(avail_w / Board.WIDTH, avail_h / Board.VISIBLE_ROWS))))
@@ -102,14 +112,16 @@ static func compute(safe: Rect2, show_hold: bool = true) -> GameLayout:
 	var d: float = minf(width * DPAD_WIDTH_FRACTION, controls_h - 2.0 * CONTROLS_PADDING)
 	var top: float = cy + (controls_h - d) / 2.0
 	l.dpad_rect = Rect2(x0 + CONTROLS_PADDING, top, d, d)
-	# Hit zones, not the drawn arms: left/right share the centre line so there is
-	# no dead zone between them, and the up arm is deliberately inert.
+	# Hit zones, not the drawn arms: they reach DPAD_HIT_MARGIN beyond the cross
+	# on the outer sides, left/right share the centre line (no dead zone, no
+	# overlap), and the up arm is deliberately inert.
 	var dx: float = l.dpad_rect.position.x
-	var band_top: float = top + 0.22 * d
+	var m: float = DPAD_HIT_MARGIN
+	var band_top: float = top + 0.2 * d
 	var band_end: float = top + 0.62 * d
-	l.buttons[&"move_left"] = Rect2(dx, band_top, 0.5 * d, band_end - band_top)
-	l.buttons[&"move_right"] = Rect2(dx + 0.5 * d, band_top, 0.5 * d, band_end - band_top)
-	l.buttons[&"soft_drop"] = Rect2(dx + 0.25 * d, band_end, 0.5 * d, top + d - band_end)
+	l.buttons[&"move_left"] = Rect2(dx - m, band_top - m, 0.5 * d + m, band_end - band_top + m)
+	l.buttons[&"move_right"] = Rect2(dx + 0.5 * d, band_top - m, 0.5 * d + m, band_end - band_top + m)
+	l.buttons[&"soft_drop"] = Rect2(dx + 0.2 * d, band_end, 0.6 * d, top + d + m - band_end)
 
 	# Face buttons sit on a diagonal inside a box the size of the D-pad; their
 	# bounding squares touch at most, so the circles never overlap.
@@ -123,7 +135,7 @@ static func compute(safe: Rect2, show_hold: bool = true) -> GameLayout:
 	# the Start/Select buttons of a real pad.
 	var mid_x: float = l.dpad_rect.end.x
 	var mid_w: float = l.face_rect.position.x - mid_x
-	var pause_w: float = minf(PAUSE_MAX_WIDTH, mid_w * 0.8)
+	var pause_w: float = minf(PAUSE_MAX_WIDTH, mid_w * PAUSE_WIDTH_FRACTION)
 	l.pause_rect = Rect2(mid_x + (mid_w - pause_w) / 2.0, cy + controls_h * 0.56, pause_w, PAUSE_HEIGHT)
 	l.buttons[&"pause"] = l.pause_rect
 	return l

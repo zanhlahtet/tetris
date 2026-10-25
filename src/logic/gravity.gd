@@ -8,16 +8,16 @@ extends RefCounted
 
 const TABLE: Array[Vector2i] = [
 	Vector2i(0, 1000),
-	Vector2i(1000, 850),
-	Vector2i(3000, 700),
-	Vector2i(6000, 550),
-	Vector2i(10000, 430),
-	Vector2i(15000, 340),
-	Vector2i(22000, 270),
-	Vector2i(30000, 220),
-	Vector2i(40000, 180),
-	Vector2i(55000, 150),
-	Vector2i(75000, 120),
+	Vector2i(1250, 850),
+	Vector2i(3750, 700),
+	Vector2i(7500, 550),
+	Vector2i(12500, 430),
+	Vector2i(18750, 340),
+	Vector2i(27500, 270),
+	Vector2i(37500, 220),
+	Vector2i(50000, 180),
+	Vector2i(68750, 150),
+	Vector2i(93750, 120),
 ]
 ## The cap: never faster than this, however high the score.
 const MIN_INTERVAL_MS: int = 120

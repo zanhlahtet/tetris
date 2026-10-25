@@ -45,16 +45,16 @@ are to be finalised in the milestone that implements them.
   | Score from | ms per row |
   |---|---|
   | 0 | 1000 |
-  | 1,000 | 850 |
-  | 3,000 | 700 |
-  | 6,000 | 550 |
-  | 10,000 | 430 |
-  | 15,000 | 340 |
-  | 22,000 | 270 |
-  | 30,000 | 220 |
-  | 40,000 | 180 |
-  | 55,000 | 150 |
-  | 75,000+ | 120 (cap) |
+  | 1,250 | 850 |
+  | 3,750 | 700 |
+  | 7,500 | 550 |
+  | 12,500 | 430 |
+  | 18,750 | 340 |
+  | 27,500 | 270 |
+  | 37,500 | 220 |
+  | 50,000 | 180 |
+  | 68,750 | 150 |
+  | 93,750+ | 120 (cap) |
 
   Never faster than one row per 120 ms. When a threshold is crossed mid-fall
   the piece keeps the same fraction of its current row, so there is no jump.
@@ -86,6 +86,13 @@ on the right, and a PAUSE pill between them. Hold and hard drop have no touch
 control (and the hold slot is hidden on phones); they remain keyboard actions.
 Holding LEFT/RIGHT uses the normal DAS/ARR. Multiple
 fingers work at once, and a finger can slide between LEFT, RIGHT and SOFT.
+A finger that started on the D-pad stays tracked until it is lifted: leaving
+the D-pad releases the held direction, and coming back resumes without
+lifting (with a 10 px hysteresis so a boundary wobble does not flicker).
+X, O and PAUSE fire once on touch-down and never re-fire when a finger slides
+back onto them. Pausing, losing focus or a layout change releases everything.
+Pressed buttons are drawn recessed; X/O/PAUSE stay drawn pressed for at least
+90 ms so a fast tap is visible (the action itself is not delayed).
 Gestures are not implemented. The ghost toggle is keyboard-only.
 
 Pausing (button, Esc/P, or the app losing focus) freezes all time and input;

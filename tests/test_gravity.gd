@@ -4,10 +4,10 @@ extends RefCounted
 var t: Object
 
 const EXPECTED: Array = [
-	[0, 1000], [999, 1000], [1000, 850], [2999, 850], [3000, 700], [5999, 700],
-	[6000, 550], [9999, 550], [10000, 430], [14999, 430], [15000, 340], [21999, 340],
-	[22000, 270], [29999, 270], [30000, 220], [39999, 220], [40000, 180], [54999, 180],
-	[55000, 150], [74999, 150], [75000, 120], [75001, 120], [1000000, 120],
+	[0, 1000], [1249, 1000], [1250, 850], [3749, 850], [3750, 700], [7499, 700],
+	[7500, 550], [12499, 550], [12500, 430], [18749, 430], [18750, 340], [27499, 340],
+	[27500, 270], [37499, 270], [37500, 220], [49999, 220], [50000, 180], [68749, 180],
+	[68750, 150], [93749, 150], [93750, 120], [93751, 120], [1000000, 120],
 ]
 
 
@@ -54,7 +54,7 @@ func test_never_gets_easier_as_score_rises() -> void:
 func test_session_uses_run_score_not_level_or_best() -> void:
 	var s := _session()
 	t.check_eq(s.gravity_interval_ms(), 1000, "fresh run")
-	s.stats.score = 3500
+	s.stats.score = 4000
 	t.check_eq(s.gravity_interval_ms(), 700, "follows the run's score")
 	s.stats.lines = 90
 	s.stats.level = 10
@@ -72,7 +72,7 @@ func test_level_still_follows_lines() -> void:
 
 func test_restart_resets_difficulty() -> void:
 	var s := _session()
-	s.stats.score = 80000
+	s.stats.score = 100000
 	t.check_eq(s.gravity_interval_ms(), 120, "fast")
 	s.restart(1, true)
 	t.check_eq(s.gravity_interval_ms(), 1000, "restart returns to the start speed")
@@ -85,7 +85,7 @@ func test_restart_resets_difficulty() -> void:
 
 func test_pause_and_resume_keep_difficulty() -> void:
 	var s := _session()
-	s.stats.score = 12000
+	s.stats.score = 13000
 	var y0: int = s.active.origin.y
 	s.tick(300)
 	s.pause()
@@ -100,7 +100,7 @@ func test_pause_and_resume_keep_difficulty() -> void:
 
 
 func test_fall_is_frame_rate_independent_at_each_speed() -> void:
-	for score in [0, 1000, 22000, 75000]:
+	for score in [0, 1250, 27500, 93750]:
 		var results: Array[int] = []
 		for step in [1, 7, 16, 17, 33, 250]:
 			var s := _session()
@@ -120,7 +120,7 @@ func test_speed_never_exceeds_one_row_per_120ms() -> void:
 
 func test_soft_drop_at_max_speed() -> void:
 	var s := _session()
-	s.stats.score = 75000
+	s.stats.score = 93750
 	s.set_soft_drop(true)
 	var y0: int = s.active.origin.y
 	s.tick(60)
@@ -133,10 +133,10 @@ func test_soft_drop_at_max_speed() -> void:
 
 func test_crossing_a_threshold_mid_fall_keeps_progress() -> void:
 	var s := _session()
-	s.stats.score = 999
+	s.stats.score = 1249
 	var y0: int = s.active.origin.y
 	s.tick(500)
-	s.stats.score = 1000
+	s.stats.score = 1250
 	s.tick(0)
 	t.check_eq(s.active.origin.y, y0, "no jump when the speed changes")
 	s.tick(424)
@@ -149,7 +149,7 @@ func test_one_big_score_crosses_several_thresholds_without_a_burst() -> void:
 	var s := _session()
 	var y0: int = s.active.origin.y
 	s.tick(900)
-	s.stats.score = 80000
+	s.stats.score = 100000
 	s.tick(0)
 	t.check_eq(s.active.origin.y, y0, "no burst of rows")
 	t.check_eq(s.gravity_interval_ms(), 120, "jumped straight to the cap")
@@ -161,10 +161,10 @@ func test_one_big_score_crosses_several_thresholds_without_a_burst() -> void:
 
 func test_hard_drop_points_count_towards_thresholds() -> void:
 	var s := _session()
-	s.stats.score = 980
+	s.stats.score = 1230
 	s.active.origin = Vector2i(3, 19)
 	s.hard_drop()  # 19 cells * 2 points = 38
-	t.check(s.stats.score >= 1000, "score crossed 1000")
+	t.check(s.stats.score >= 1250, "score crossed 1250")
 	t.check_eq(s.gravity_interval_ms(), 850, "gravity followed")
 
 
