@@ -52,6 +52,8 @@ var lock_resets: int = 0
 
 var _bag: BagRandomizer
 var _gravity_ms: int = 0
+## The base interval _gravity_ms was accumulated against (0 = none yet).
+var _applied_interval: int = 0
 var _lock_ms: int = 0
 var _soft_drop: bool = false
 var _direction: int = 0  # held horizontal direction: -1, 0 or 1
@@ -86,14 +88,15 @@ func _reset_state(seed_value: int, use_seed: bool) -> void:
 	game_over = false
 	lock_resets = 0
 	_gravity_ms = 0
+	_applied_interval = 0
 	_lock_ms = 0
 	_held_ms = 0
 	_repeat_moves = 0
 
 
-## Milliseconds per row of automatic fall at the current level.
+## Milliseconds per row of automatic fall at this run's current score.
 func gravity_interval_ms() -> int:
-	return Gravity.interval_ms(stats.level)
+	return Gravity.interval_for_score(stats.score)
 
 
 ## Takes the next piece from the queue and spawns it. Returns false (and leaves
@@ -243,8 +246,13 @@ func _tick_vertical(delta_ms: int) -> void:
 		if _lock_ms >= LOCK_DELAY_MS:
 			_lock_piece()
 		return
-	_gravity_ms += delta_ms
 	var interval: int = gravity_interval_ms()
+	# A score threshold crossed mid-fall (soft-drop points) changes the speed:
+	# keep the same fraction of the row so the piece neither jumps nor stalls.
+	if _applied_interval != 0 and _applied_interval != interval:
+		_gravity_ms = _gravity_ms * interval / _applied_interval
+	_applied_interval = interval
+	_gravity_ms += delta_ms
 	if _soft_drop:
 		interval = maxi(1, interval / SOFT_DROP_FACTOR)
 	while _gravity_ms >= interval:

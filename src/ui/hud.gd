@@ -5,6 +5,9 @@ extends CanvasLayer
 ## Reads session state each frame; never mutates it.
 
 
+## Smallest size a stat value may shrink to (still legible in the pixel font).
+const MIN_VALUE_FONT_SIZE: int = 10
+
 var _session: GameSession
 var _save: SaveData
 var _hold_caption: Label
@@ -13,6 +16,7 @@ var _stats_panel: Panel
 var _captions: Array[Label] = []
 var _values: Array[Label] = []
 var _award: Label
+var _value_font_size: int = 24
 
 
 func _ready() -> void:
@@ -42,6 +46,7 @@ func apply_layout(layout: GameLayout) -> void:
 	var caption_size: int = maxi(14, layout.stat_font_size - 1)
 	_hold_caption.add_theme_font_size_override("font_size", caption_size)
 	_next_caption.add_theme_font_size_override("font_size", caption_size)
+	_value_font_size = layout.stat_font_size + 8
 	var block: float = layout.stat_block_height()
 	var rect: Rect2 = layout.stats_rect
 	_stats_panel.position = rect.position
@@ -51,11 +56,9 @@ func apply_layout(layout: GameLayout) -> void:
 		var top: float = rect.position.y + GameLayout.STATS_PADDING + i * block
 		_captions[i].add_theme_font_size_override("font_size", caption_size)
 		_captions[i].position = Vector2(rect.position.x + GameLayout.STATS_PADDING, top)
-		_values[i].add_theme_font_size_override("font_size", layout.stat_font_size + 8)
 		_values[i].position = Vector2(rect.position.x + GameLayout.STATS_PADDING, top + caption_size * 1.35)
 		_values[i].custom_minimum_size.x = text_width
 		_values[i].size.x = text_width
-		_values[i].clip_text = true
 	_award.add_theme_font_size_override("font_size", layout.award_font_size)
 	_award.position = layout.award_rect.position
 	_award.size = layout.award_rect.size
@@ -68,10 +71,12 @@ func _process(_delta: float) -> void:
 func _refresh() -> void:
 	if _session == null or _save == null or _award == null:
 		return
-	_values[0].text = str(_session.stats.score)
-	_values[1].text = str(_session.stats.lines)
-	_values[2].text = str(_session.stats.level)
-	_values[3].text = str(maxi(_save.high_score, _session.stats.score))
+	var texts: Array[String] = [str(_session.stats.score), str(_session.stats.lines),
+			str(_session.stats.level), str(maxi(_save.high_score, _session.stats.score))]
+	for i in range(texts.size()):
+		_values[i].text = texts[i]
+		_values[i].add_theme_font_size_override("font_size",
+				fit_font_size(RetroFont.bold(), texts[i], _value_font_size, _values[i].size.x))
 	_award.text = _session.last_lock.describe() if _session.last_lock != null else ""
 
 
@@ -94,3 +99,12 @@ static func _panel_style() -> StyleBoxFlat:
 	box.border_color = RetroDraw.PANEL_BORDER
 	box.anti_aliasing = false
 	return box
+
+
+## Largest font size (at most `base`, at least MIN_VALUE_FONT_SIZE) at which
+## `text` fits in `width`, so long numbers shrink instead of being cut off.
+static func fit_font_size(font: Font, text: String, base: int, width: float) -> int:
+	var size: int = base
+	while size > MIN_VALUE_FONT_SIZE and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > width:
+		size -= 1
+	return size

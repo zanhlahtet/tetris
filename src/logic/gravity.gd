@@ -1,15 +1,33 @@
 class_name Gravity
 extends RefCounted
-## Gravity progression: the Tetris Guideline curve,
-##   seconds per row = (0.8 - (level - 1) * 0.007) ^ (level - 1)
-## converted to whole milliseconds (level 1 = 1000, level 5 = 355,
-## level 10 = 64, level 15 = 7). The curve is clamped at CURVE_MAX_LEVEL, so
-## every later level falls at the level-15 speed, and never below 1 ms/row.
+## Automatic fall speed, driven by the run's score (a deliberate custom
+## Marathon variant, not the Guideline level curve). The whole progression is
+## this one table of (minimum score, milliseconds per row); the last row is
+## the speed cap, so the fastest fall is MIN_INTERVAL_MS per row.
+## LEVEL (lines / 10) is tracked separately and does not affect gravity.
 
-const CURVE_MAX_LEVEL: int = 15
+const TABLE: Array[Vector2i] = [
+	Vector2i(0, 1000),
+	Vector2i(1000, 850),
+	Vector2i(3000, 700),
+	Vector2i(6000, 550),
+	Vector2i(10000, 430),
+	Vector2i(15000, 340),
+	Vector2i(22000, 270),
+	Vector2i(30000, 220),
+	Vector2i(40000, 180),
+	Vector2i(55000, 150),
+	Vector2i(75000, 120),
+]
+## The cap: never faster than this, however high the score.
+const MIN_INTERVAL_MS: int = 120
 
 
-static func interval_ms(level: int) -> int:
-	var l: int = clampi(level, 1, CURVE_MAX_LEVEL)
-	var seconds: float = pow(0.8 - (l - 1) * 0.007, l - 1)
-	return maxi(1, roundi(seconds * 1000.0))
+## Milliseconds per row at the given run score. Non-increasing in score.
+static func interval_for_score(score: int) -> int:
+	var interval: int = TABLE[0].y
+	for entry in TABLE:
+		if score < entry.x:
+			break
+		interval = entry.y
+	return interval
