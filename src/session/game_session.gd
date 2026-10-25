@@ -13,19 +13,19 @@ const MAX_LOCK_RESETS: int = 15
 ## Soft drop falls this many times faster than gravity.
 const SOFT_DROP_FACTOR: int = 20
 
-## Milliseconds per row of automatic fall (level 1; levels arrive with scoring).
-var gravity_interval_ms: int = 1000
 ## Delayed Auto Shift: hold time before a held direction starts repeating.
 var das_ms: int = 167
 ## Auto Repeat Rate: time between repeated moves once DAS has elapsed.
 ## 0 slides the piece to the wall instantly.
 var arr_ms: int = 33
 
-var board: Board = Board.new()
+var board: Board
+var stats: ScoreKeeper
 var active: ActivePiece = null
 ## Upcoming piece types, next piece first. Always holds PREVIEW_COUNT entries.
 var queue: Array[int] = []
-## True once a new piece could not spawn. No further ticking or commands apply.
+## True after block-out (spawn blocked) or lock-out (piece locked entirely in
+## the hidden rows). No further ticking or commands apply until restart().
 var game_over: bool = false
 ## Lock-timer resets used by the current piece (0..MAX_LOCK_RESETS).
 var lock_resets: int = 0
@@ -41,8 +41,35 @@ var _repeat_moves: int = 0
 
 ## With no arguments the sequence is random; pass a seed for determinism.
 func _init(seed_value: int = 0, use_seed: bool = false) -> void:
+	_reset_state(seed_value, use_seed)
+
+
+## Resets everything to a fresh game and spawns the first piece. Tuning
+## (das_ms, arr_ms) and held-key state (direction, soft drop) are kept; the
+## DAS timer restarts.
+func restart(seed_value: int = 0, use_seed: bool = false) -> void:
+	_reset_state(seed_value, use_seed)
+	spawn_next()
+
+
+func _reset_state(seed_value: int, use_seed: bool) -> void:
+	board = Board.new()
+	stats = ScoreKeeper.new()
 	_bag = BagRandomizer.new(seed_value, not use_seed)
+	queue.clear()
 	_fill_queue()
+	active = null
+	game_over = false
+	lock_resets = 0
+	_gravity_ms = 0
+	_lock_ms = 0
+	_held_ms = 0
+	_repeat_moves = 0
+
+
+## Milliseconds per row of automatic fall at the current level.
+func gravity_interval_ms() -> int:
+	return Gravity.interval_ms(stats.level)
 
 
 ## Takes the next piece from the queue and spawns it. Returns false (and leaves
@@ -86,8 +113,11 @@ func set_soft_drop(enabled: bool) -> void:
 func hard_drop() -> void:
 	if not _is_playing():
 		return
+	var dropped: int = 0
 	while _can_move(0, 1):
 		active.origin.y += 1
+		dropped += 1
+	stats.add_hard_drop(dropped)
 	_lock_piece()
 
 
@@ -134,12 +164,14 @@ func _tick_vertical(delta_ms: int) -> void:
 			_lock_piece()
 		return
 	_gravity_ms += delta_ms
-	var interval: int = gravity_interval_ms
+	var interval: int = gravity_interval_ms()
 	if _soft_drop:
-		interval = maxi(1, gravity_interval_ms / SOFT_DROP_FACTOR)
+		interval = maxi(1, interval / SOFT_DROP_FACTOR)
 	while _gravity_ms >= interval:
 		_gravity_ms -= interval
 		active.origin.y += 1
+		if _soft_drop:
+			stats.add_soft_drop(1)
 		if is_grounded():
 			_gravity_ms = 0
 			_lock_ms = 0
@@ -194,10 +226,24 @@ func _can_move(dx: int, dy: int) -> bool:
 	return board.can_place(moved)
 
 
+## Writes the piece into the board, clears and scores lines, then spawns the
+## next piece. Lock-out: a piece locked entirely above the visible rows ends
+## the game immediately.
 func _lock_piece() -> void:
-	for c in active.cells():
+	var locked_cells: Array[Vector2i] = active.cells()
+	var lock_out: bool = true
+	for c in locked_cells:
 		board.set_cell(c.x, c.y, active.type)
+		if board.is_visible_row(c.y):
+			lock_out = false
 	active = null
+	if lock_out:
+		game_over = true
+		return
+	var full: Array[int] = board.full_rows()
+	if not full.is_empty():
+		board.clear_rows(full)
+		stats.add_line_clear(full.size())
 	spawn_next()
 
 

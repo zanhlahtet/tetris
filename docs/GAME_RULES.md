@@ -31,8 +31,11 @@ are to be finalised in the milestone that implements them.
 - Ghost piece shows the hard-drop landing position.
 
 ## Gravity, locking
-- Gravity: 1000 ms per row at level 1 (`GameSession.gravity_interval_ms`); the
-  Guideline level curve arrives with levels. Timing is integer milliseconds.
+- Gravity follows the Guideline curve, seconds per row =
+  `(0.8 - (level - 1) * 0.007) ^ (level - 1)`, rounded to whole milliseconds
+  (`src/logic/gravity.gd`): L1 1000, L2 793, L5 355, L10 64, L15 7 ms/row.
+  **(decision)** The curve is clamped at level 15; later levels use that speed.
+  Timing is integer milliseconds.
 - Soft drop: **(decision)** 20x gravity while held.
 - Hard drop moves to the lowest valid position and locks immediately.
 - Lock delay: 500 ms starting when the piece lands. A successful move or
@@ -50,19 +53,28 @@ are to be finalised in the milestone that implements them.
 ## Controls (desktop)
 Input Map actions in `project.godot`: `move_left` (Left), `move_right`
 (Right), `soft_drop` (Down), `hard_drop` (Space), `rotate_cw` (Up, X),
-`rotate_ccw` (Z). Latest direction pressed wins.
+`rotate_ccw` (Z), `restart` (R). Latest direction pressed wins.
 
-## Scoring (Guideline)
-- Soft drop: 1 point per cell. Hard drop: 2 points per cell.
-- Line clears (x level): single 100, double 300, triple 500, Tetris 800.
-- T-spin scoring and back-to-back / combo bonuses: **(TBD)**, may be
-  deferred past the first playable release.
+## Scoring (`src/logic/score_keeper.gd`)
+- Soft drop: 1 point per cell fallen while soft drop is held. Hard drop: 2
+  points per cell. Natural gravity falls score nothing.
+- Line clears, multiplied by the level in effect *before* the clear:
+  single 100, double 300, triple 500, four lines 800.
+- Lines clear instantly on lock (no clear animation or entry delay yet).
+- T-spin, back-to-back and combo scoring: **(TBD)**, M7; `ScoreKeeper` is the
+  extension point.
 
 ## Marathon
-- Start at level 1; level up every 10 lines cleared.
-- **(decision)** Game ends at level 15 (150 lines) as a win, or on top-out.
-- Top-out: a piece locks entirely above the visible board, or a new piece
-  cannot spawn because it overlaps existing blocks.
+- Start at level 1; level = 1 + total lines / 10.
+- **(decision)** No level cap or win condition for now (the earlier idea of
+  ending at level 15 is deferred); the game runs until top-out.
+- Game over, either:
+  - **Block-out**: a new piece cannot spawn because it overlaps locked cells.
+  - **Lock-out**: a piece locks with all four blocks in the hidden rows
+    (above the visible board). Checked before line clears.
+  A piece locking partly in the visible rows is not a lock-out.
+- Restart (`restart` action, R on desktop) resets board, queue, bag, score,
+  lines, level and timers; DAS/ARR settings and held keys are kept.
 
 ## Out of scope
 Multiplayer, online features, other modes, 1980s-style rotation, sound/visual

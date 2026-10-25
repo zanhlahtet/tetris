@@ -17,12 +17,12 @@ func _session(type: int, rotation: int, origin: Vector2i) -> GameSession:
 	return s
 
 
-## Fills the whole board with locked cells except the piece's own cells.
-func _fill_around_piece(s: GameSession) -> void:
+## Fills the whole board with locked cells except the piece's own cells.  Optionally leaves one column empty.
+func _fill_around_piece(s: GameSession, hole_column: int = -1) -> void:
 	var own := s.active.cells()
 	for y in range(Board.TOTAL_ROWS):
 		for x in range(Board.WIDTH):
-			if not own.has(Vector2i(x, y)):
+			if x != hole_column and not own.has(Vector2i(x, y)):
 				s.board.set_cell(x, y, 1)
 
 
@@ -309,7 +309,7 @@ func test_airborne_rotation_costs_no_reset() -> void:
 
 func test_failed_rotation_does_not_reset_timer() -> void:
 	var s := _session(Tetromino.Type.T, 0, Vector2i(3, 38))
-	_fill_around_piece(s)
+	_fill_around_piece(s, 0)  # hole so locking can't clear 40 rows
 	var piece := s.active
 	s.tick(400)
 	t.check(not s.rotate_cw(), "blocked")
