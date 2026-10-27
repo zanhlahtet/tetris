@@ -1,7 +1,7 @@
 extends SceneTree
 ## Headless test runner. Discovers tests/test_*.gd, runs every method named
 ## test_*, and exits non-zero on failure.
-##   godot --headless --path . --script res://tests/run_tests.gd
+##   godot --headless --path . --script res://tests/run_tests.gd [-- name...]
 ## Test methods may `await t.process_frame`; the node tree is `t.root`.
 
 var _failures: int = 0
@@ -40,10 +40,17 @@ func check_eq(actual: Variant, expected: Variant, message: String = "") -> void:
 	check(actual == expected, "%s (expected %s, got %s)" % [message, expected, actual])
 
 
+## Optional user args after `--` keep only test files whose name contains one
+## of them, e.g. `... --script res://tests/run_tests.gd -- gravity layout`.
 func _test_files() -> PackedStringArray:
 	var out := PackedStringArray()
+	var filters := OS.get_cmdline_user_args()
 	for f in DirAccess.get_files_at("res://tests"):
 		if f.begins_with("test_") and f.ends_with(".gd"):
-			out.append(f)
+			var wanted: bool = filters.is_empty()
+			for needle in filters:
+				wanted = wanted or f.contains(needle)
+			if wanted:
+				out.append(f)
 	out.sort()
 	return out

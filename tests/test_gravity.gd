@@ -175,11 +175,40 @@ func test_large_scores_fit_without_truncation() -> void:
 	var font: Font = RetroFont.bold()
 	for safe in [Rect2(0, 0, 720, 1280), Rect2(40, 0, 640, 1280), Rect2(0, 0, 720, 1560)]:
 		var l := GameLayout.compute(safe)
-		var width: float = l.stats_rect.size.x - 2.0 * GameLayout.STATS_PADDING
-		var base: int = l.stat_font_size + 8
+		# A value label is its HUD section minus the padding either side.
+		var width: float = l.stat_rects[0].size.x - 2.0 * GameLayout.HUD_PADDING
+		var base: int = l.stat_font_size
 		for text in ["0", "12840", "999999999", "1234567890"]:
 			var size: int = Hud.fit_font_size(font, text, base, width)
 			t.check(size >= Hud.MIN_VALUE_FONT_SIZE and size <= base, "%s size %d within bounds" % [text, size])
 			t.check(font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x <= width, "%s fits at %d in %s" % [text, size, safe])
 		t.check_eq(Hud.fit_font_size(font, "0", base, width), base, "short numbers keep the full size")
 		t.check(Hud.fit_font_size(font, "999999999", base, width) >= 12, "nine digits stay legible in %s" % safe)
+
+
+func test_real_hud_keeps_large_scores_inside_its_sections() -> void:
+	var layout := GameLayout.compute(Rect2(0, 0, 720, 1560), false)
+	var session := GameSession.new(1, true)
+	session.spawn_next()
+	var hud := Hud.new()
+	t.root.add_child(hud)
+	await t.process_frame  # lets the node enter the tree and run _ready
+	hud.bind(session, SaveData.new())
+	hud.apply_layout(layout)
+	session.stats.score = 1234567890
+	session.stats.lines = 99999
+	hud._refresh()
+	for i in range(GameLayout.STAT_COUNT):
+		var label: Label = hud._values[i]
+		var caption: Label = hud._captions[i]
+		var section: Rect2 = layout.stat_rects[i]
+		var text_size: Vector2 = label.get_theme_font("font").get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size("font_size"))
+		t.check(text_size.x <= label.size.x, "value %d fits its label (%s of %s)" % [i, text_size.x, label.size.x])
+		t.check(section.encloses(Rect2(label.position, label.size)), "value label %d inside its section" % i)
+		t.check(layout.hud_rect.encloses(Rect2(caption.position, caption.size)), "caption %d inside the HUD" % i)
+		t.check(label.position.y >= caption.position.y + caption.size.y - 0.01, "value %d below its caption (caption y %s h %s, value y %s)" % [i, caption.position.y, caption.size.y, label.position.y])
+		t.check_eq(label.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER, "value %d centred" % i)
+		t.check_eq(caption.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER, "caption %d centred" % i)
+	t.check(Rect2(hud._values[0].position, hud._values[0].size).end.y <= layout.hud_rect.end.y, "values inside the HUD height")
+	t.root.remove_child(hud)
+	hud.free()

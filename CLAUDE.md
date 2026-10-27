@@ -23,7 +23,8 @@ Rules:
   hidden buffer (`Board.HIDDEN_ROWS` = 20 hidden rows above 24 visible, 44 total).
 - No physics engine; collisions are grid lookups.
 - Base resolution 720x1280, stretch `canvas_items`, aspect `expand`: taller or
-  wider screens get extra viewport, never letterboxing. `GameLayout.compute(safe_rect)`
+  wider screens get extra viewport, never letterboxing (`window/stretch/aspect="expand"` must stay set in `project.godot`; a test checks it). The viewport clear colour is the navy `RetroDraw.BACKGROUND`.
+  Layout order: stats HUD (top) > board (centred) with NEXT/award columns > controller (bottom). `GameLayout.compute(safe_rect)`
   (pure, tested) places every element from the usable area; `scenes/main.gd`
   feeds it the platform safe area on phones and re-applies on resize.
 - Touch: `TouchControls` hit-tests raw `InputEventScreenTouch/Drag` (GUI Buttons

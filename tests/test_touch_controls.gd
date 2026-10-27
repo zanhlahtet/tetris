@@ -159,7 +159,7 @@ func test_controls_are_enlarged() -> void:
 	var c: float = (_layout.buttons[&"rotate_ccw"] as Rect2).size.x
 	t.check(c >= _layout.face_rect.size.x * 0.65 and c <= _layout.face_rect.size.x * 0.70, "X is 65-70%% of the face cluster: %s of %s" % [c, _layout.face_rect.size.x])
 	t.check(_layout.pause_rect.size.y > 56.0 and _layout.pause_rect.size.x >= 160.0, "PAUSE larger: %s" % _layout.pause_rect.size)
-	t.check(_layout.board_rect.size.y >= 900.0, "tall playfield not squeezed")
+	t.check(_layout.board_rect.size.y >= 850.0, "tall playfield not squeezed below the HUD")
 
 
 func test_hit_regions_do_not_overlap() -> void:

@@ -82,6 +82,19 @@ Input Map actions in `project.godot`: `move_left` (Left), `move_right`
 (Right), `soft_drop` (Down), `hard_drop` (Space), `rotate_cw` (Up, X),
 `rotate_ccw` (Z), `restart` (R), `hold` (C or Shift), `toggle_ghost` (G), `toggle_sound` (M), `pause` (Esc or P). Latest direction pressed wins.
 
+**Screen layout** (portrait, `src/ui/game_layout.gd`). The project stretches
+with `canvas_items` + aspect `expand`, so on any phone the game fills the
+whole display (no letterbox bars) with square, undistorted cells; the navy
+background is the viewport clear colour and reaches behind the notch and home
+indicator, while every element stays inside the platform safe area. Top to
+bottom: a horizontal HUD (SCORE, LINES, LEVEL, BEST: four equal sections,
+caption over value, centred, large numbers shrink to fit), the 10 x 24 board
+centred on the screen, then the controller. NEXT sits vertically centred beside
+the board (right column); the last-lock award text (e.g. T-SPIN DOUBLE,
+BACK-TO-BACK, COMBO) sits in the left column, centred beside the board, and
+HOLD (desktop only) tops that column. Cells are the largest that fit; spare
+height is split evenly into the HUD-board and board-controller gaps.
+
 The on-screen controller (bottom of the screen) presses the same actions: a
 D-pad on the left (left, right, down = soft drop; the up arm is decoration),
 one large round X button (counter-clockwise rotation) on the right, and a

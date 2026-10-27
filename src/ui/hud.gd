@@ -1,8 +1,8 @@
 class_name Hud
 extends CanvasLayer
-## HUD: HOLD/NEXT captions, the statistics panel (score, lines, level, best)
-## and the last-lock award text. Positions and sizes come from GameLayout.
-## Reads session state each frame; never mutates it.
+## HUD: the horizontal statistics panel (score, lines, level, best), the
+## HOLD/NEXT captions and the last-lock award text. Positions and sizes come
+## from GameLayout. Reads session state each frame; never mutates it.
 
 
 ## Smallest size a stat value may shrink to (still legible in the pixel font).
@@ -13,6 +13,7 @@ var _save: SaveData
 var _hold_caption: Label
 var _next_caption: Label
 var _stats_panel: Panel
+var _dividers: Array[ColorRect] = []
 var _captions: Array[Label] = []
 var _values: Array[Label] = []
 var _award: Label
@@ -26,11 +27,19 @@ func _ready() -> void:
 	_stats_panel.add_theme_stylebox_override("panel", _panel_style())
 	_stats_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_stats_panel)
+	for i in range(GameLayout.STAT_COUNT - 1):
+		var divider := ColorRect.new()
+		divider.color = RetroDraw.PANEL_BORDER
+		divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(divider)
+		_dividers.append(divider)
 	for caption in ["SCORE", "LINES", "LEVEL", "BEST"]:
 		_captions.append(_make_label(caption, RetroDraw.CAPTION, false))
 		_values.append(_make_label("0", RetroDraw.TEXT, true))
 	_award = _make_label("", RetroDraw.ACCENT, true)
 	_award.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	for label in [_hold_caption, _next_caption, _award] + _captions + _values:
+		(label as Label).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 func bind(session: GameSession, save: SaveData) -> void:
@@ -40,28 +49,33 @@ func bind(session: GameSession, save: SaveData) -> void:
 
 
 func apply_layout(layout: GameLayout) -> void:
+	var caption_size: int = layout.caption_font_size
 	_hold_caption.visible = layout.show_hold
-	_hold_caption.position = layout.hold_caption_pos
-	_next_caption.position = layout.next_caption_pos
-	var caption_size: int = maxi(14, layout.stat_font_size - 1)
-	_hold_caption.add_theme_font_size_override("font_size", caption_size)
-	_next_caption.add_theme_font_size_override("font_size", caption_size)
-	_value_font_size = layout.stat_font_size + 8
-	var block: float = layout.stat_block_height()
-	var rect: Rect2 = layout.stats_rect
-	_stats_panel.position = rect.position
-	_stats_panel.size = rect.size
-	var text_width: float = rect.size.x - 2.0 * GameLayout.STATS_PADDING
+	_place(_hold_caption, layout.hold_caption_rect, caption_size)
+	_place(_next_caption, layout.next_caption_rect, caption_size)
+	_value_font_size = layout.stat_font_size
+	_stats_panel.position = layout.hud_rect.position
+	_stats_panel.size = layout.hud_rect.size
+	var inner_top: float = layout.hud_rect.position.y + GameLayout.HUD_PADDING
+	var divider_h: float = layout.hud_rect.size.y - 2.0 * GameLayout.HUD_PADDING - 4.0
 	for i in range(GameLayout.STAT_COUNT):
-		var top: float = rect.position.y + GameLayout.STATS_PADDING + i * block
-		_captions[i].add_theme_font_size_override("font_size", caption_size)
-		_captions[i].position = Vector2(rect.position.x + GameLayout.STATS_PADDING, top)
-		_values[i].position = Vector2(rect.position.x + GameLayout.STATS_PADDING, top + caption_size * 1.35)
-		_values[i].custom_minimum_size.x = text_width
-		_values[i].size.x = text_width
-	_award.add_theme_font_size_override("font_size", layout.award_font_size)
-	_award.position = layout.award_rect.position
-	_award.size = layout.award_rect.size
+		var section: Rect2 = layout.stat_rects[i]
+		# Labels span the section so their centred text sits on its midline.
+		var caption_h: float = GameLayout.line_height(caption_size)
+		_place(_captions[i], Rect2(section.position.x, inner_top, section.size.x, caption_h), caption_size)
+		_values[i].position = Vector2(section.position.x + GameLayout.HUD_PADDING, inner_top + caption_h)
+		_values[i].size = Vector2(section.size.x - 2.0 * GameLayout.HUD_PADDING, GameLayout.line_height(_value_font_size))
+	for i in range(_dividers.size()):
+		var x: float = layout.stat_rects[i + 1].position.x
+		_dividers[i].position = Vector2(x - 1.0, inner_top + 2.0)
+		_dividers[i].size = Vector2(2.0, divider_h)
+	_place(_award, layout.award_rect, layout.award_font_size)
+
+
+func _place(label: Label, rect: Rect2, font_size: int) -> void:
+	label.add_theme_font_size_override("font_size", font_size)
+	label.position = rect.position
+	label.size = rect.size
 
 
 func _process(_delta: float) -> void:
