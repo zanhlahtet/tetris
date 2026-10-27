@@ -1,7 +1,7 @@
 class_name ControllerSkin
 extends RefCounted
 ## Procedural retro-console look for the touch controls: a warm gray body,
-## charcoal D-pad, round purple face buttons and a pill button. Pure drawing
+## charcoal D-pad, one large round purple X button and a pill button. Pure drawing
 ## helpers with no input or game knowledge; every draw call takes the
 ## CanvasItem to paint on, and a `pressed` flag for the physical "pushed in"
 ## state. Not affiliated with any console maker; the shapes are generic.
@@ -14,7 +14,7 @@ const DPAD_PRESSED := Color("1d1d21")
 const DPAD_LIGHT := Color("57575f")
 const DPAD_MARK := Color("6d6d77")
 const FACE_CCW := Color("b9a4ec")
-const FACE_CW := Color("7a58c2")
+const DPAD_RIM := Color("7a58c2")
 const PILL_PAUSE := Color("b4aea3")
 const LABEL_DARK := Color("2b2833")
 const LABEL_LIGHT := Color("f4f0ff")
@@ -77,7 +77,7 @@ static func draw_dpad(ci: CanvasItem, box: Rect2, left: bool, right: bool, down:
 			sink = Vector2(0, 3)
 			ci.draw_rect(rect.grow(-3), _fade(DPAD_PRESSED.darkened(0.4), alpha))
 			ci.draw_rect(Rect2(rect.position + Vector2(3, 3), Vector2(rect.size.x - 6, 6)), _fade(Color.BLACK, alpha))
-			ci.draw_rect(rect.grow(-3), _fade(FACE_CW.lightened(0.3), alpha), false, 2.0)
+			ci.draw_rect(rect.grow(-3), _fade(DPAD_RIM.lightened(0.3), alpha), false, 2.0)
 			mark = DPAD_ACTIVE
 		_draw_arrow(ci, rect.get_center() + sink, arm[2], t * 0.22, _fade(mark, alpha))
 	ci.draw_circle(box.get_center(), t * 0.16, _fade(DPAD_PRESSED, alpha))

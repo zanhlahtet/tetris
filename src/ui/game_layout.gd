@@ -7,10 +7,12 @@ extends RefCounted
 ## Portrait stack, top to bottom inside a content column (max 720 wide,
 ## centred): board flanked by a left column (hold + stats) and a right column
 ## (next), then the controller block pinned to the bottom: D-pad on the left,
-## PAUSE between, diagonal face buttons on the right. The board is the largest square-celled grid that fits; leftover space is split around it.
+## PAUSE between, one large X button on the right. The board (10 x 24 visible
+## cells) is the largest square-celled grid that fits and sits at the top of the
+## usable area; any leftover height stays between it and the controller.
 
 const MAX_CONTENT_WIDTH: float = 720.0
-const TOP_MARGIN: float = 12.0
+const TOP_MARGIN: float = 16.0
 const BOTTOM_MARGIN: float = 12.0
 const GAP: float = 12.0
 ## How far the D-pad hit zones extend past the drawn cross.
@@ -20,6 +22,10 @@ const MIN_COLUMN_WIDTH: float = 112.0
 const CAPTION_HEIGHT: float = 30.0
 const PANEL_GAP: float = 24.0
 const MAX_PREVIEW_CELL: int = 32
+## Side-panel width as a fraction of the board width, and preview cell size as a
+## fraction of the board cell, at most.
+const SIDE_PANEL_BOARD_FRACTION: float = 0.5
+const PREVIEW_CELL_FRACTION: float = 0.8
 const PAUSE_HEIGHT: float = 66.0
 const PAUSE_MAX_WIDTH: float = 180.0
 ## PAUSE width as a fraction of the gap between the D-pad and face clusters;
@@ -32,16 +38,16 @@ const STATS_PADDING: float = 6.0
 ## Lines of text reserved for the last-lock award (action, B2B, combo, perfect clear).
 const AWARD_LINES: int = 6
 ## Controller block: inner padding, D-pad edge as a fraction of the content
-## width, and face-button diameter as a fraction of the D-pad edge.
+## width, and the X button diameter as a fraction of the face cluster's width.
 const CONTROLS_PADDING: float = 12.0
 ## Controller block height as a fraction of the usable height, and its limits.
 const CONTROLS_HEIGHT_FRACTION: float = 0.215
 const CONTROLS_MIN_HEIGHT: float = 200.0
 const CONTROLS_MAX_HEIGHT: float = 280.0
 const DPAD_WIDTH_FRACTION: float = 0.34
-const FACE_DIAMETER_FRACTION: float = 0.5
+const FACE_DIAMETER_FRACTION: float = 0.68
 ## Buttons drawn and hit-tested as circles inscribed in their rectangle.
-const ROUND_ACTIONS: Array[StringName] = [&"rotate_ccw", &"rotate_cw"]
+const ROUND_ACTIONS: Array[StringName] = [&"rotate_ccw"]
 
 var cell_size: int = 0
 var board_rect: Rect2
@@ -81,16 +87,17 @@ static func compute(safe: Rect2, show_hold: bool = true) -> GameLayout:
 
 	var board_size := Vector2(Board.WIDTH, Board.VISIBLE_ROWS) * l.cell_size
 	# Whole pixels keep the tile edges crisp.
-	var board_pos := Vector2(
-			x0 + (width - board_size.x) / 2.0,
-			y0 + TOP_MARGIN + (avail_h - board_size.y) / 2.0).floor()
+	var board_pos := Vector2(x0 + (width - board_size.x) / 2.0, y0 + TOP_MARGIN).floor()
 	l.board_rect = Rect2(board_pos, board_size)
 
 	var col_w: float = (width - board_size.x) / 2.0
-	var inner: float = col_w - 2.0 * SIDE_MARGIN
+	# Side panels stay in proportion to the board, so on short screens (narrow
+	# board) they shrink instead of dwarfing it.
+	var inner: float = minf(col_w - 2.0 * SIDE_MARGIN, SIDE_PANEL_BOARD_FRACTION * board_size.x)
 	var left_x: float = x0 + SIDE_MARGIN
 	var right_x: float = x0 + width - col_w + SIDE_MARGIN
-	l.preview_cell = clampi(int(inner / 4.0), 10, MAX_PREVIEW_CELL)
+	var max_preview: int = maxi(10, mini(MAX_PREVIEW_CELL, int(l.cell_size * PREVIEW_CELL_FRACTION)))
+	l.preview_cell = clampi(int(inner / 4.0), 10, max_preview)
 	var pc: float = l.preview_cell
 
 	l.hold_caption_pos = Vector2(left_x, board_pos.y)
@@ -98,7 +105,10 @@ static func compute(safe: Rect2, show_hold: bool = true) -> GameLayout:
 	if show_hold:
 		l.hold_rect = Rect2(left_x, board_pos.y + CAPTION_HEIGHT, 4.0 * pc, 3.0 * pc)
 		stats_top = l.hold_rect.end.y + PANEL_GAP
-	l.stat_font_size = clampi(int(inner / 5.0), 14, 34)
+	# The stats and award text must also fit inside the board's height:
+	# stats + award take about 21.4 * font - 7.2 pixels.
+	var font_for_height: int = int((board_size.y - (stats_top - board_pos.y) + 7.2) / 21.4)
+	l.stat_font_size = clampi(mini(int(inner / 5.0), font_for_height), 14, 34)
 	l.stats_rect = Rect2(left_x, stats_top, inner, STAT_COUNT * l.stat_block_height() + 2.0 * STATS_PADDING)
 
 	l.award_font_size = maxi(12, l.stat_font_size - 4)
@@ -123,13 +133,12 @@ static func compute(safe: Rect2, show_hold: bool = true) -> GameLayout:
 	l.buttons[&"move_right"] = Rect2(dx + 0.5 * d, band_top - m, 0.5 * d + m, band_end - band_top + m)
 	l.buttons[&"soft_drop"] = Rect2(dx + 0.2 * d, band_end, 0.6 * d, top + d + m - band_end)
 
-	# Face buttons sit on a diagonal inside a box the size of the D-pad; their
-	# bounding squares touch at most, so the circles never overlap.
+	# The single X button is centred in a box the size of the D-pad (the midpoint
+	# of where the old X and O sat).
 	var fx: float = x0 + width - CONTROLS_PADDING - d
 	var c: float = FACE_DIAMETER_FRACTION * d
 	l.face_rect = Rect2(fx, top, d, d)
-	l.buttons[&"rotate_ccw"] = Rect2(fx, top + d - c, c, c)
-	l.buttons[&"rotate_cw"] = Rect2(fx + d - c, top, c, c)
+	l.buttons[&"rotate_ccw"] = Rect2(l.face_rect.get_center() - Vector2(c, c) / 2.0, Vector2(c, c))
 
 	# Start-style PAUSE pill in the gap between the clusters, a little low like
 	# the Start/Select buttons of a real pad.

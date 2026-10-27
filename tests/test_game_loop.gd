@@ -18,47 +18,50 @@ func _fill_row(s: GameSession, y: int, except: Array[int]) -> void:
 			s.board.set_cell(x, y, 1)
 
 
-## Hard-dropping an O from the spawn row to rows 38-39 moves it 19 cells.
-const O_DROP_POINTS: int = 19 * 2
+## Last board row (the floor row).
+const FLOOR: int = Board.TOTAL_ROWS - 1
+## Hard-dropping an O from the spawn row to the two floor rows moves it
+## FLOOR - 1 - 19 cells.
+const O_DROP_POINTS: int = (FLOOR - 1 - 19) * 2
 
 
 func test_single_line_clear() -> void:
 	var s := _session(Tetromino.Type.O, Vector2i(3, 19))  # columns 4-5
-	_fill_row(s, 39, [4, 5])
-	s.board.set_cell(0, 38, 7)  # row above the clear, should fall
+	_fill_row(s, FLOOR, [4, 5])
+	s.board.set_cell(0, FLOOR - 1, 7)  # row above the clear, should fall
 	s.hard_drop()
-	# O covers rows 38-39; row 39 completes. Remaining: marker + O's top half.
+	# O covers the two floor rows; the floor row completes. Remaining: marker + O's top half.
 	t.check_eq(s.stats.lines, 1, "one line")
 	t.check_eq(s.stats.score, 100 + O_DROP_POINTS, "100 + hard drop")
-	t.check_eq(s.board.get_cell(0, 39), 7, "marker fell")
-	t.check_eq(s.board.get_cell(4, 39), Tetromino.Type.O, "O top half fell")
-	t.check_eq(s.board.get_cell(5, 39), Tetromino.Type.O, "O top half fell")
-	t.check_eq(s.board.get_cell(1, 39), Board.EMPTY, "rest of row empty")
+	t.check_eq(s.board.get_cell(0, FLOOR), 7, "marker fell")
+	t.check_eq(s.board.get_cell(4, FLOOR), Tetromino.Type.O, "O top half fell")
+	t.check_eq(s.board.get_cell(5, FLOOR), Tetromino.Type.O, "O top half fell")
+	t.check_eq(s.board.get_cell(1, FLOOR), Board.EMPTY, "rest of row empty")
 	t.check(s.board.full_rows().is_empty(), "no full rows left")
 
 
 func test_double_line_clear() -> void:
 	var s := _session(Tetromino.Type.O, Vector2i(3, 19))
-	_fill_row(s, 38, [4, 5])
-	_fill_row(s, 39, [4, 5])
+	_fill_row(s, FLOOR - 1, [4, 5])
+	_fill_row(s, FLOOR, [4, 5])
 	s.board.set_cell(0, 30, 7)  # stray block: keeps this from being a perfect clear
 	s.hard_drop()
 	t.check_eq(s.stats.lines, 2, "two lines")
 	t.check_eq(s.stats.score, 300 + O_DROP_POINTS, "300 + hard drop")
 	for x in range(Board.WIDTH):
-		t.check_eq(s.board.get_cell(x, 39), Board.EMPTY, "board empty (col %d)" % x)
+		t.check_eq(s.board.get_cell(x, FLOOR), Board.EMPTY, "board empty (col %d)" % x)
 
 
 func test_triple_and_four_line_clears() -> void:
 	for rows in [3, 4]:
 		# Vertical I (state R) occupies column origin.x + 2: place it in column 0.
 		var s := _session(Tetromino.Type.I, Vector2i(-2, 10), 1)
-		for y in range(40 - rows, 40):
+		for y in range(Board.TOTAL_ROWS - rows, Board.TOTAL_ROWS):
 			_fill_row(s, y, [0])
 		s.board.set_cell(9, 20, 7)  # stray block: keeps this from being a perfect clear
 		# 3 rows: the I's top block remains and falls onto the floor.
 		s.hard_drop()
-		var drop_cells := 40 - 4 - 10  # origin.y 10 -> 36
+		var drop_cells := Board.TOTAL_ROWS - 4 - 10  # origin.y 10 -> TOTAL_ROWS - 4
 		t.check_eq(s.stats.lines, rows, "%d lines" % rows)
 		t.check_eq(s.stats.score, (500 if rows == 3 else 800) + drop_cells * 2, "%d-line score" % rows)
 		var leftover := 1 if rows == 4 else 2
@@ -74,13 +77,13 @@ func test_clear_scored_at_current_level_and_gravity_ignores_level() -> void:
 	var s := _session(Tetromino.Type.O, Vector2i(3, 19))
 	s.stats.lines = 9
 	s.stats.level = 1
-	_fill_row(s, 39, [4, 5])
+	_fill_row(s, FLOOR, [4, 5])
 	s.hard_drop()
 	t.check_eq(s.stats.level, 2, "level up at 10 lines")
 	t.check_eq(s.gravity_interval_ms(), 1000, "gravity follows score (still < 1000), not level")
 	# Next clear is paid at level 2.
 	s.board.clear()
-	_fill_row(s, 39, [4, 5])
+	_fill_row(s, FLOOR, [4, 5])
 	s.active = ActivePiece.new(Tetromino.Type.O)
 	var before := s.stats.score
 	s.hard_drop()
@@ -213,6 +216,73 @@ func test_restart_clears_timers() -> void:
 	var y0 := s.active.origin.y
 	s.tick(200)
 	t.check_eq(s.active.origin.y, y0, "gravity accumulator was reset")
+
+
+# --- 10 x 24 visible rows ---------------------------------------------------
+
+func test_pieces_spawn_at_the_top_of_the_visible_area() -> void:
+	var s := GameSession.new(3, true)
+	s.spawn_next()
+	var top: int = Board.TOTAL_ROWS
+	for c in s.active.cells():
+		top = mini(top, c.y)
+		t.check(c.y >= Board.HIDDEN_ROWS - 1 and c.y <= Board.HIDDEN_ROWS + 1, "spawn cell row %d near the visible top" % c.y)
+	t.check(top >= Board.HIDDEN_ROWS - 1, "spawn does not move with the taller board")
+
+
+func test_piece_falls_through_all_24_visible_rows() -> void:
+	var s := GameSession.new(3, true)
+	s.spawn_next()
+	s.active = ActivePiece.new(Tetromino.Type.O)
+	s.active.origin = Tetromino.spawn_origin()
+	var ghost := s.ghost_cells()
+	var lowest := 0
+	for c in ghost:
+		lowest = maxi(lowest, c.y)
+	t.check_eq(lowest, FLOOR, "ghost reaches the new floor row")
+	var rows_fallen: int = ghost[0].y - s.active.cells()[0].y
+	t.check(rows_fallen >= Board.VISIBLE_ROWS - 1, "the whole taller board is usable: fell %d rows" % rows_fallen)
+
+
+func test_clear_in_the_top_visible_row() -> void:
+	var s := _session(Tetromino.Type.O, Vector2i(3, 19))
+	# A stack rising to the very top of the visible area (column 0 left open so
+	# nothing below clears), with a two-row well in columns 4-5 on the top two
+	# visible rows for the O to complete.
+	_fill_row(s, Board.HIDDEN_ROWS, [4, 5])
+	_fill_row(s, Board.HIDDEN_ROWS + 1, [4, 5])
+	for y in range(Board.HIDDEN_ROWS + 2, Board.TOTAL_ROWS):
+		_fill_row(s, y, [0])
+	s.hard_drop()
+	t.check_eq(s.stats.lines, 2, "two rows cleared at the top of the visible area")
+	t.check(not s.game_over, "locking in the visible area is not a top-out")
+	t.check_eq(s.board.get_cell(1, Board.HIDDEN_ROWS), Board.EMPTY, "cleared top visible row is now empty")
+	t.check_eq(s.board.get_cell(1, Board.HIDDEN_ROWS + 1), Board.EMPTY, "second cleared row is now empty")
+	t.check_eq(s.board.get_cell(1, Board.HIDDEN_ROWS + 2), 1, "stack below the clear untouched")
+
+
+func test_stack_reaching_the_spawn_rows_tops_out() -> void:
+	var s := GameSession.new(4, true)
+	s.spawn_next()
+	# Fill the middle columns from the floor up through the visible area and the
+	# first hidden row: the next spawn is blocked.
+	for y in range(Board.HIDDEN_ROWS - 1, Board.TOTAL_ROWS):
+		for x in [3, 4, 5, 6]:
+			s.board.set_cell(x, y, 1)
+	t.check(not s.spawn_next(), "spawn blocked by a 25-row-high stack")
+	t.check(s.game_over, "block-out")
+
+
+func test_stacking_the_taller_board_takes_longer_than_the_old_one() -> void:
+	var s := GameSession.new(5, true)
+	s.spawn_next()
+	var drops := 0
+	while not s.game_over and drops < 200:
+		s.hard_drop()
+		drops += 1
+	t.check(s.game_over, "eventually tops out")
+	# A 20-row board needed at most 10 O-sized drops in one column; 24 rows need more.
+	t.check(drops >= 6, "ended after %d hard drops" % drops)
 
 
 func test_restart_input_action_exists() -> void:

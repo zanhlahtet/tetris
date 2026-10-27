@@ -67,12 +67,12 @@ func test_no_dead_zone_between_neighbours() -> void:
 func test_simultaneous_touches() -> void:
 	_setup()
 	_touch(0, _center(&"move_left"), true)
-	_touch(1, _center(&"rotate_cw"), true)
+	_touch(1, _center(&"rotate_ccw"), true)
 	_touch(2, _center(&"soft_drop"), true)
-	t.check_eq(_log, [[&"move_left", true], [&"rotate_cw", true], [&"soft_drop", true]], "three at once")
-	_touch(1, _center(&"rotate_cw"), false)
+	t.check_eq(_log, [[&"move_left", true], [&"rotate_ccw", true], [&"soft_drop", true]], "three at once")
+	_touch(1, _center(&"rotate_ccw"), false)
 	t.check(_controls.is_pressed(&"move_left") and _controls.is_pressed(&"soft_drop"), "others still held")
-	t.check(not _controls.is_pressed(&"rotate_cw"), "rotate released")
+	t.check(not _controls.is_pressed(&"rotate_ccw"), "rotate released")
 
 
 func test_two_fingers_on_one_button() -> void:
@@ -110,17 +110,17 @@ func test_sliding_off_releases() -> void:
 func test_sliding_onto_tap_buttons_does_not_press_them() -> void:
 	_setup()
 	_touch(0, _center(&"move_right"), true)
-	_drag(0, _center(&"rotate_cw"))
-	t.check(not _controls.is_pressed(&"rotate_cw"), "rotate not triggered by a slide")
+	_drag(0, _center(&"rotate_ccw"))
+	t.check(not _controls.is_pressed(&"rotate_ccw"), "rotate not triggered by a slide")
 	t.check(not _controls.is_pressed(&"move_right"), "movement released")
 
 
 func test_tap_buttons_do_not_slide() -> void:
 	_setup()
-	_touch(0, _center(&"rotate_cw"), true)
+	_touch(0, _center(&"rotate_ccw"), true)
 	_drag(0, _center(&"move_left"))
 	t.check(not _controls.is_pressed(&"move_left"), "no slide from a tap button")
-	t.check(not _controls.is_pressed(&"rotate_cw"), "tap button released on leaving")
+	t.check(not _controls.is_pressed(&"rotate_ccw"), "tap button released on leaving")
 
 
 func test_drag_from_unknown_touch_ignored() -> void:
@@ -137,11 +137,11 @@ func test_disabling_releases_everything() -> void:
 	t.check(not _controls.is_pressed(&"move_left") and not _controls.is_pressed(&"soft_drop"), "all released")
 	t.check_eq(_log.size(), 4, "release events emitted so no key stays stuck")
 	_log.clear()
-	_touch(2, _center(&"rotate_cw"), true)
+	_touch(2, _center(&"rotate_ccw"), true)
 	t.check(_log.is_empty(), "ignored while disabled")
 	_controls.enabled = true
-	_touch(2, _center(&"rotate_cw"), true)
-	t.check_eq(_log, [[&"rotate_cw", true]], "works again when enabled")
+	_touch(2, _center(&"rotate_ccw"), true)
+	t.check_eq(_log, [[&"rotate_ccw", true]], "works again when enabled")
 
 
 func test_late_release_of_unknown_touch_is_harmless() -> void:
@@ -152,14 +152,14 @@ func test_late_release_of_unknown_touch_is_harmless() -> void:
 
 # --- larger controls ------------------------------------------------------
 
-# Sizes at 720x1280 before this change: D-pad 202.8, face circles 101.4, PAUSE 170x56.
+# Sizes at 720x1280 before round 1: D-pad 202.8, PAUSE 170x56.
 func test_controls_are_enlarged() -> void:
 	_setup()
 	t.check(_layout.dpad_rect.size.x >= 202.8 * 1.15 and _layout.dpad_rect.size.x <= 202.8 * 1.25, "D-pad 15-25%% larger: %s" % _layout.dpad_rect.size.x)
-	var c: float = (_layout.buttons[&"rotate_cw"] as Rect2).size.x
-	t.check(c >= 101.4 * 1.15 and c <= 101.4 * 1.25, "X/O about 20%% larger: %s" % c)
+	var c: float = (_layout.buttons[&"rotate_ccw"] as Rect2).size.x
+	t.check(c >= _layout.face_rect.size.x * 0.65 and c <= _layout.face_rect.size.x * 0.70, "X is 65-70%% of the face cluster: %s of %s" % [c, _layout.face_rect.size.x])
 	t.check(_layout.pause_rect.size.y > 56.0 and _layout.pause_rect.size.x >= 160.0, "PAUSE larger: %s" % _layout.pause_rect.size)
-	t.check(_layout.board_rect.size.x >= 480.0, "playfield not squeezed")
+	t.check(_layout.board_rect.size.y >= 900.0, "tall playfield not squeezed")
 
 
 func test_hit_regions_do_not_overlap() -> void:
@@ -190,9 +190,9 @@ func test_hit_regions_stay_within_the_controller_body() -> void:
 
 func test_hit_regions_cover_more_than_the_drawn_buttons() -> void:
 	_setup()
-	var cw: Rect2 = _layout.buttons[&"rotate_cw"]
-	var just_outside: Vector2 = cw.get_center() + Vector2(cw.size.x / 2.0 + 4.0, 0)
-	t.check_eq(_controls.action_at(just_outside), &"rotate_cw", "touch slightly outside the circle still hits")
+	var x_btn: Rect2 = _layout.buttons[&"rotate_ccw"]
+	var just_outside: Vector2 = x_btn.get_center() + Vector2(x_btn.size.x / 2.0 + 4.0, 0)
+	t.check_eq(_controls.action_at(just_outside), &"rotate_ccw", "touch slightly outside the circle still hits")
 	var p: Rect2 = _layout.pause_rect
 	t.check_eq(_controls.action_at(p.position - Vector2(4, 4)), &"pause", "touch just outside PAUSE still hits")
 
@@ -271,7 +271,7 @@ func test_hold_tolerates_a_slightly_wandering_finger() -> void:
 
 func test_one_shot_buttons_do_not_retrigger_on_reentry() -> void:
 	_setup()
-	for action in [&"rotate_cw", &"rotate_ccw", &"pause"]:
+	for action in [&"rotate_ccw", &"pause"]:
 		_setup()
 		_touch(0, _center(action), true)
 		_drag(0, _layout.board_rect.get_center())
@@ -288,11 +288,15 @@ func test_quick_tap_fires_exactly_one_rotation() -> void:
 	h.rotate_cw_pressed.connect(func() -> void: rotations.append(&"cw"))
 	h.rotate_ccw_pressed.connect(func() -> void: rotations.append(&"ccw"))
 	_controls.action_changed.connect(func(a: StringName, pressed: bool) -> void: h._unhandled_input(_action_event(a, pressed)))
-	_touch(0, _center(&"rotate_cw"), true)
-	_touch(0, _center(&"rotate_cw"), false)
+	_touch(0, _center(&"rotate_ccw"), true)
+	_touch(0, _center(&"rotate_ccw"), false)
+	t.check_eq(rotations, [&"ccw"] as Array[StringName], "one counter-clockwise rotation per tap, none clockwise")
+	# Wobbling on the button while held must not repeat the rotation.
 	_touch(1, _center(&"rotate_ccw"), true)
+	_drag(1, _center(&"rotate_ccw") + Vector2(3, 3))
+	_drag(1, _center(&"rotate_ccw"))
 	_touch(1, _center(&"rotate_ccw"), false)
-	t.check_eq(rotations, [&"cw", &"ccw"] as Array[StringName], "one rotation per tap")
+	t.check_eq(rotations, [&"ccw", &"ccw"] as Array[StringName], "still one per tap")
 	h.free()
 
 
@@ -308,13 +312,13 @@ func test_new_touch_on_a_tracked_index_replaces_the_old_one() -> void:
 func test_multitouch_with_one_finger_sliding() -> void:
 	_setup()
 	_touch(0, _center(&"move_left"), true)
-	_touch(1, _center(&"rotate_cw"), true)
+	_touch(1, _center(&"rotate_ccw"), true)
 	_drag(0, _center(&"soft_drop"))
-	t.check(_controls.is_pressed(&"soft_drop") and _controls.is_pressed(&"rotate_cw"), "slide does not disturb the other finger")
+	t.check(_controls.is_pressed(&"soft_drop") and _controls.is_pressed(&"rotate_ccw"), "slide does not disturb the other finger")
 	_drag(0, _layout.board_rect.get_center())
-	_touch(1, _center(&"rotate_cw"), false)
-	t.check(not _controls.is_pressed(&"soft_drop") and not _controls.is_pressed(&"rotate_cw"), "both released")
-	t.check_eq(_log.filter(func(e: Array) -> bool: return e[0] == &"rotate_cw"), [[&"rotate_cw", true], [&"rotate_cw", false]], "rotate pressed once")
+	_touch(1, _center(&"rotate_ccw"), false)
+	t.check(not _controls.is_pressed(&"soft_drop") and not _controls.is_pressed(&"rotate_ccw"), "both released")
+	t.check_eq(_log.filter(func(e: Array) -> bool: return e[0] == &"rotate_ccw"), [[&"rotate_ccw", true], [&"rotate_ccw", false]], "rotate pressed once")
 
 
 func test_two_fingers_share_an_arm_and_one_wanders() -> void:
@@ -333,9 +337,9 @@ func test_release_all_drops_every_finger_for_pause_and_background() -> void:
 	_setup()
 	_touch(0, _center(&"move_left"), true)
 	_touch(1, _center(&"soft_drop"), true)
-	_touch(2, _center(&"rotate_cw"), true)
+	_touch(2, _center(&"rotate_ccw"), true)
 	_controls.release_all()
-	for a in [&"move_left", &"soft_drop", &"rotate_cw"]:
+	for a in [&"move_left", &"soft_drop", &"rotate_ccw"]:
 		t.check(not _controls.is_pressed(a), "%s released" % a)
 	var releases := _log.filter(func(e: Array) -> bool: return not e[1])
 	t.check_eq(releases.size(), 3, "a release event for each so no key sticks")
@@ -371,23 +375,23 @@ func test_quick_tap_stays_lit_for_the_minimum_time() -> void:
 	var now := [1000]
 	_controls.clock = func() -> int: return now[0]
 	t.root.add_child(_controls)
-	_touch(0, _center(&"rotate_cw"), true)
+	_touch(0, _center(&"rotate_ccw"), true)
 	now[0] = 1020
-	_touch(0, _center(&"rotate_cw"), false)
-	t.check(not _controls.is_pressed(&"rotate_cw"), "logically released at once")
-	t.check(_controls.is_lit(&"rotate_cw"), "still drawn pressed")
+	_touch(0, _center(&"rotate_ccw"), false)
+	t.check(not _controls.is_pressed(&"rotate_ccw"), "logically released at once")
+	t.check(_controls.is_lit(&"rotate_ccw"), "still drawn pressed")
 	now[0] = 1000 + TouchControls.MIN_FEEDBACK_MS - 1
 	_controls._process(0.0)
-	t.check(_controls.is_lit(&"rotate_cw"), "lit until the minimum time passes")
+	t.check(_controls.is_lit(&"rotate_ccw"), "lit until the minimum time passes")
 	now[0] = 1000 + TouchControls.MIN_FEEDBACK_MS
 	_controls._process(0.0)
-	t.check(not _controls.is_lit(&"rotate_cw"), "then goes back to normal")
+	t.check(not _controls.is_lit(&"rotate_ccw"), "then goes back to normal")
 	t.check(not _controls.is_processing(), "no per-frame work when idle")
 	t.check(TouchControls.MIN_FEEDBACK_MS >= 80 and TouchControls.MIN_FEEDBACK_MS <= 100, "80-100 ms")
-	_touch(1, _center(&"rotate_cw"), true)
+	_touch(1, _center(&"rotate_ccw"), true)
 	now[0] = 2000
-	_touch(1, _center(&"rotate_cw"), false)
-	t.check(not _controls.is_lit(&"rotate_cw"), "a long press adds no extra lingering")
+	_touch(1, _center(&"rotate_ccw"), false)
+	t.check(not _controls.is_lit(&"rotate_ccw"), "a long press adds no extra lingering")
 	t.root.remove_child(_controls)
 
 
@@ -474,15 +478,15 @@ func test_dpad_down_and_horizontal_zones() -> void:
 	t.check_eq(_controls.action_at(d.position + d.size * Vector2(0.5, 0.45)) in [&"move_left", &"move_right"], true, "centre has no dead spot")
 
 
-func test_face_buttons_are_round_and_distinct() -> void:
+func test_x_button_is_one_round_button_at_the_cluster_centre() -> void:
 	_setup()
-	var ccw: Rect2 = _layout.buttons[&"rotate_ccw"]
-	var cw: Rect2 = _layout.buttons[&"rotate_cw"]
-	t.check(ccw.get_center().x < cw.get_center().x and ccw.get_center().y > cw.get_center().y, "CCW lower-left, CW upper-right")
+	var x_btn: Rect2 = _layout.buttons[&"rotate_ccw"]
+	t.check(x_btn.get_center().distance_to(_layout.face_rect.get_center()) < 0.5, "centred in the face cluster")
+	t.check_eq(x_btn.size.x, x_btn.size.y, "circle")
 	# A square's corner is outside the circle: no touch there.
-	t.check_eq(_controls.action_at(ccw.position + Vector2(1, 1)), &"", "corner of the bounding square misses")
-	t.check_eq(_controls.action_at(ccw.get_center() + Vector2(ccw.size.x * 0.5, 0)), &"rotate_ccw", "edge of the circle hits")
-	t.check(ccw.get_center().distance_to(cw.get_center()) > ccw.size.x * 1.2, "circles do not touch")
+	t.check_eq(_controls.action_at(x_btn.position + Vector2(1, 1)), &"", "corner of the bounding square misses")
+	t.check_eq(_controls.action_at(x_btn.get_center() + Vector2(x_btn.size.x * 0.5, 0)), &"rotate_ccw", "edge of the circle hits")
+	t.check_eq(GameLayout.ROUND_ACTIONS, [&"rotate_ccw"] as Array[StringName], "X is the only round button")
 
 
 func test_removed_hold_and_drop_buttons_are_gone() -> void:
@@ -497,14 +501,32 @@ func test_removed_hold_and_drop_buttons_are_gone() -> void:
 	t.check(InputMap.has_action("hold") and InputMap.has_action("hard_drop"), "hold and hard_drop actions still exist for the keyboard")
 
 
-func test_rotation_labels_and_actions() -> void:
+func test_only_x_rotation_button_on_mobile() -> void:
 	_setup()
 	t.check_eq(TouchControls.LABELS[&"rotate_ccw"], "X", "X is counter-clockwise")
-	t.check_eq(TouchControls.LABELS[&"rotate_cw"], "O", "O is clockwise")
-	t.check((_layout.buttons[&"rotate_ccw"] as Rect2).position.y > (_layout.buttons[&"rotate_cw"] as Rect2).position.y, "X stays lower-left, O upper-right")
+	t.check(not TouchControls.LABELS.has(&"rotate_cw"), "no O label")
+	t.check(not _layout.buttons.has(&"rotate_cw"), "no O hit region")
+	var touch_actions: Array[String] = []
+	for action: StringName in _layout.buttons:
+		touch_actions.append(String(action))
+	touch_actions.sort()
+	t.check_eq(touch_actions, ["move_left", "move_right", "pause", "rotate_ccw", "soft_drop"] as Array[String], "exact touch action set")
 	_touch(0, _center(&"rotate_ccw"), true)
-	_touch(1, _center(&"rotate_cw"), true)
-	t.check_eq(_log, [[&"rotate_ccw", true], [&"rotate_cw", true]], "each fires its own action")
+	t.check_eq(_log, [[&"rotate_ccw", true]], "X fires rotate_ccw")
+	t.check(InputMap.has_action("rotate_cw"), "clockwise stays available for the keyboard")
+	var source := FileAccess.get_file_as_string("res://src/ui/controller_skin.gd")
+	t.check(not source.contains("FACE_CW"), "no O colour left in the skin")
+
+
+func test_clockwise_rotation_still_works_from_the_keyboard() -> void:
+	var h := InputHandler.new()
+	var seen: Array[StringName] = []
+	h.rotate_cw_pressed.connect(func() -> void: seen.append(&"cw"))
+	h.rotate_ccw_pressed.connect(func() -> void: seen.append(&"ccw"))
+	h._unhandled_input(_action_event(&"rotate_cw", true))
+	h._unhandled_input(_action_event(&"rotate_cw", false))
+	t.check_eq(seen, [&"cw"] as Array[StringName], "rotate_cw action emits clockwise only")
+	h.free()
 
 
 func test_controller_is_symmetrical() -> void:
@@ -527,7 +549,7 @@ class SkinProbe extends Node2D:
 			ControllerSkin.draw_body(self, layout.controls_rect, alpha)
 			for pressed in [false, true]:
 				ControllerSkin.draw_dpad(self, layout.dpad_rect, pressed, pressed, pressed, alpha)
-				ControllerSkin.draw_round_button(self, layout.buttons[&"rotate_cw"], ControllerSkin.FACE_CW, "O", pressed, alpha)
+				ControllerSkin.draw_round_button(self, layout.buttons[&"rotate_ccw"], ControllerSkin.FACE_CCW, "X", pressed, alpha)
 				ControllerSkin.draw_pill(self, layout.pause_rect, ControllerSkin.PILL_PAUSE, "PAUSE", pressed, alpha)
 		draws += 1
 

@@ -5,9 +5,12 @@ Items marked **(decision)** are variant-specific choices; items marked **(TBD)**
 are to be finalised in the milestone that implements them.
 
 ## Board
-- 10 columns x 20 visible rows, plus 20 hidden rows above (40 total).
+- **(decision)** 10 columns x **24** visible rows (a taller-than-Guideline
+  playfield for phones), plus 20 hidden rows above (44 total). The logical
+  size is the same on every device; only the drawn cell size changes with the
+  screen, never the number of rows.
 - Integer grid; (0,0) is top-left of the hidden buffer, y grows downward.
-  Visible rows are y = 20..39.
+  Visible rows are y = 20..43; the floor row is y = 43.
 - Pieces spawn with their lower row on the first visible row (y = 20) and their
   upper row in the hidden buffer (y = 19). **(decision)** Spawn is checked
   against locked cells; a blocked spawn is a top-out.
@@ -51,12 +54,12 @@ are to be finalised in the milestone that implements them.
   | 12,500 | 430 |
   | 18,750 | 340 |
   | 27,500 | 270 |
-  | 37,500 | 220 |
-  | 50,000 | 180 |
-  | 68,750 | 150 |
-  | 93,750+ | 120 (cap) |
+  | 37,500 | 240 |
+  | 50,000 | 210 |
+  | 68,750 | 190 |
+  | 93,750+ | 170 (cap) |
 
-  Never faster than one row per 120 ms. When a threshold is crossed mid-fall
+  Never faster than one row per 170 ms. When a threshold is crossed mid-fall
   the piece keeps the same fraction of its current row, so there is no jump.
   **LEVEL** still rises every 10 cleared lines and still multiplies line-clear
   points, but no longer affects gravity. Timing is integer milliseconds.
@@ -81,17 +84,20 @@ Input Map actions in `project.godot`: `move_left` (Left), `move_right`
 
 The on-screen controller (bottom of the screen) presses the same actions: a
 D-pad on the left (left, right, down = soft drop; the up arm is decoration),
-round X (counter-clockwise, lower-left) and O (clockwise, upper-right) buttons
-on the right, and a PAUSE pill between them. Hold and hard drop have no touch
-control (and the hold slot is hidden on phones); they remain keyboard actions.
+one large round X button (counter-clockwise rotation) on the right, and a
+PAUSE pill between them. There is no touch O button: clockwise rotation,
+hold and hard drop have no touch control (and the hold slot is hidden on
+phones); they remain keyboard actions (`rotate_cw` is Up or X on a keyboard).
+The board sits at the top of the safe area; on shorter screens the cells
+shrink uniformly so the 24 rows always fit above the controller.
 Holding LEFT/RIGHT uses the normal DAS/ARR. Multiple
 fingers work at once, and a finger can slide between LEFT, RIGHT and SOFT.
 A finger that started on the D-pad stays tracked until it is lifted: leaving
 the D-pad releases the held direction, and coming back resumes without
 lifting (with a 10 px hysteresis so a boundary wobble does not flicker).
-X, O and PAUSE fire once on touch-down and never re-fire when a finger slides
+X and PAUSE fire once on touch-down and never re-fire when a finger slides
 back onto them. Pausing, losing focus or a layout change releases everything.
-Pressed buttons are drawn recessed; X/O/PAUSE stay drawn pressed for at least
+Pressed buttons are drawn recessed; X/PAUSE stay drawn pressed for at least
 90 ms so a fast tap is visible (the action itself is not delayed).
 Gestures are not implemented. The ghost toggle is keyboard-only.
 

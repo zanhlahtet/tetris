@@ -14,13 +14,13 @@ const TABLE: Array[Vector2i] = [
 	Vector2i(12500, 430),
 	Vector2i(18750, 340),
 	Vector2i(27500, 270),
-	Vector2i(37500, 220),
-	Vector2i(50000, 180),
-	Vector2i(68750, 150),
-	Vector2i(93750, 120),
+	Vector2i(37500, 240),
+	Vector2i(50000, 210),
+	Vector2i(68750, 190),
+	Vector2i(93750, 170),
 ]
 ## The cap: never faster than this, however high the score.
-const MIN_INTERVAL_MS: int = 120
+const MIN_INTERVAL_MS: int = 170
 
 
 ## Milliseconds per row at the given run score. Non-increasing in score.

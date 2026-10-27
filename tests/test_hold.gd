@@ -176,7 +176,8 @@ func test_ghost_lands_on_floor() -> void:
 	for c in ghost:
 		ys.append(c.y)
 	ys.sort()
-	t.check_eq(ys, [38, 38, 39, 39] as Array[int], "O ghost on floor rows")
+	var floor_y: int = Board.TOTAL_ROWS - 1
+	t.check_eq(ys, [floor_y - 1, floor_y - 1, floor_y, floor_y] as Array[int], "O ghost on floor rows")
 
 
 func test_ghost_lands_on_stack() -> void:
@@ -204,7 +205,7 @@ func test_ghost_matches_hard_drop_for_every_piece_and_rotation() -> void:
 
 
 func test_ghost_equals_active_when_grounded() -> void:
-	var s := _with(Tetromino.Type.O, Vector2i(3, 38))
+	var s := _with(Tetromino.Type.O, Vector2i(3, Board.TOTAL_ROWS - 2))
 	t.check_eq(s.ghost_cells(), s.active.cells(), "already at the bottom")
 
 

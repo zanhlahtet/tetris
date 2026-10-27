@@ -4,6 +4,9 @@ extends RefCounted
 
 var t: Object
 
+## Last board row (the floor row).
+const FLOOR: int = Board.TOTAL_ROWS - 1
+
 
 func _session(type: int, origin: Vector2i, rotation: int = 0) -> GameSession:
 	var s := GameSession.new(1, true)
@@ -20,17 +23,17 @@ func _fill_row(s: GameSession, y: int, except: Array[int]) -> void:
 			s.board.set_cell(x, y, 1)
 
 
-## Classic T-Spin Double slot. T (nub down) fills (3..5, 37) and (4, 38):
-## row 37 is full except 3-5, row 38 is full except 4, an overhang at (3, 36)
-## provides the third corner, and row 39 (minus column 0, so it never clears)
-## is the floor. The T starts pointing left and rotates counter-clockwise (L -> 2)
-## into the slot.
+## Classic T-Spin Double slot, FLOOR-relative. T (nub down) fills
+## (3..5, FLOOR-2) and (4, FLOOR-1): row FLOOR-2 is full except 3-5, row FLOOR-1
+## is full except 4, an overhang at (3, FLOOR-3) provides the third corner, and
+## the FLOOR row (minus column 0, so it never clears) is the floor. The T starts
+## pointing left and rotates counter-clockwise (L -> 2) into the slot.
 func _tsd_setup() -> GameSession:
-	var s := _session(Tetromino.Type.T, Vector2i(3, 36), 3)
-	_fill_row(s, 37, [3, 4, 5])
-	_fill_row(s, 38, [4])
-	_fill_row(s, 39, [0])
-	s.board.set_cell(3, 36, 1)
+	var s := _session(Tetromino.Type.T, Vector2i(3, FLOOR - 3), 3)
+	_fill_row(s, FLOOR - 2, [3, 4, 5])
+	_fill_row(s, FLOOR - 1, [4])
+	_fill_row(s, FLOOR, [0])
+	s.board.set_cell(3, FLOOR - 3, 1)
 	return s
 
 
@@ -168,9 +171,9 @@ func test_kick_index_is_recorded() -> void:
 
 
 func test_no_t_spin_for_other_pieces() -> void:
-	var s := _session(Tetromino.Type.S, Vector2i(3, 36), 0)
-	_fill_row(s, 39, [0])
-	for cell in [Vector2i(3, 36), Vector2i(5, 36), Vector2i(3, 38), Vector2i(5, 38)]:
+	var s := _session(Tetromino.Type.S, Vector2i(3, FLOOR - 3), 0)
+	_fill_row(s, FLOOR, [0])
+	for cell in [Vector2i(3, FLOOR - 3), Vector2i(5, FLOOR - 3), Vector2i(3, FLOOR - 1), Vector2i(5, FLOOR - 1)]:
 		s.board.set_cell(cell.x, cell.y, 1)
 	s.rotate_cw()
 	s.hard_drop()
@@ -179,28 +182,28 @@ func test_no_t_spin_for_other_pieces() -> void:
 
 func test_perfect_clear_double() -> void:
 	var s := _session(Tetromino.Type.O, Vector2i(3, 19))
-	for y in [38, 39]:
+	for y in [FLOOR - 1, FLOOR]:
 		_fill_row(s, y, [4, 5])
 	s.hard_drop()
 	t.check(s.board.is_clear(), "board empty")
 	t.check(s.last_lock.perfect_clear, "perfect clear flagged")
-	t.check_eq(s.stats.score, 300 + 1200 + 19 * 2, "double + PC bonus + hard drop")
+	t.check_eq(s.stats.score, 300 + 1200 + (FLOOR - 1 - 19) * 2, "double + PC bonus + hard drop")
 	t.check_eq(s.last_lock.describe(), "DOUBLE\nPERFECT CLEAR", "label")
 
 
 func test_clear_with_blocks_left_is_not_perfect() -> void:
 	var s := _session(Tetromino.Type.O, Vector2i(3, 19))
-	for y in [38, 39]:
+	for y in [FLOOR - 1, FLOOR]:
 		_fill_row(s, y, [4, 5])
 	s.board.set_cell(0, 30, 3)
 	s.hard_drop()
 	t.check(not s.last_lock.perfect_clear, "stray block")
-	t.check_eq(s.stats.score, 300 + 19 * 2, "no bonus")
+	t.check_eq(s.stats.score, 300 + (FLOOR - 1 - 19) * 2, "no bonus")
 
 
 func test_perfect_clear_counts_hidden_rows() -> void:
 	var s := _session(Tetromino.Type.O, Vector2i(3, 19))
-	for y in [38, 39]:
+	for y in [FLOOR - 1, FLOOR]:
 		_fill_row(s, y, [4, 5])
 	s.board.set_cell(0, 3, 3)  # block in the hidden buffer
 	s.hard_drop()
@@ -210,26 +213,26 @@ func test_perfect_clear_counts_hidden_rows() -> void:
 func test_back_to_back_and_combo_through_the_session() -> void:
 	# Two consecutive I-piece Tetrises: 800, then 1200 (B2B) + 50 (combo 1) plus drops.
 	var s := _session(Tetromino.Type.I, Vector2i(-2, 10), 1)
-	for y in range(36, 40):
+	for y in range(FLOOR - 3, FLOOR + 1):
 		_fill_row(s, y, [0])
 	s.board.set_cell(9, 20, 7)
 	s.hard_drop()
 	var first := s.stats.score
-	t.check_eq(first, 800 + (36 - 10) * 2, "first Tetris")
+	t.check_eq(first, 800 + (FLOOR - 3 - 10) * 2, "first Tetris")
 	s.active = ActivePiece.new(Tetromino.Type.I)
 	s.active.rotation = 1
 	s.active.origin = Vector2i(-2, 10)
-	for y in range(36, 40):
+	for y in range(FLOOR - 3, FLOOR + 1):
 		_fill_row(s, y, [0])
 	s.hard_drop()
-	t.check_eq(s.stats.score - first, 1200 + 50 + (36 - 10) * 2 - 0, "second Tetris: B2B + combo")
+	t.check_eq(s.stats.score - first, 1200 + 50 + (FLOOR - 3 - 10) * 2 - 0, "second Tetris: B2B + combo")
 	t.check(s.last_lock.back_to_back_applied, "flag")
 	t.check_eq(s.last_lock.combo, 1, "combo 1")
 
 
 func test_lock_without_clear_resets_combo_in_session() -> void:
 	var s := _session(Tetromino.Type.O, Vector2i(3, 19))
-	_fill_row(s, 39, [4, 5])
+	_fill_row(s, FLOOR, [4, 5])
 	s.board.set_cell(0, 30, 3)
 	s.hard_drop()  # clear
 	t.check_eq(s.stats.combo, 0, "combo started")

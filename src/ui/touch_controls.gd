@@ -15,7 +15,6 @@ signal action_changed(action: StringName, pressed: bool)
 const SLIDE_ACTIONS: Array[StringName] = [&"move_left", &"move_right", &"soft_drop"]
 const LABELS: Dictionary = {
 	&"rotate_ccw": "X",
-	&"rotate_cw": "O",
 	&"pause": "PAUSE",
 }
 ## Round buttons accept touches this much outside the drawn circle.
@@ -218,8 +217,7 @@ func _draw() -> void:
 	ControllerSkin.draw_body(self, _body_rect, alpha)
 	ControllerSkin.draw_dpad(self, _dpad_rect, is_lit(&"move_left"), is_lit(&"move_right"), is_lit(&"soft_drop"), alpha)
 	var colors: Dictionary = {
-		&"rotate_ccw": ControllerSkin.FACE_CCW, &"rotate_cw": ControllerSkin.FACE_CW,
-		&"pause": ControllerSkin.PILL_PAUSE,
+		&"rotate_ccw": ControllerSkin.FACE_CCW, &"pause": ControllerSkin.PILL_PAUSE,
 	}
 	for action: StringName in colors:
 		if not _rects.has(action):

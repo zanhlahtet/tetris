@@ -7,7 +7,7 @@ extends RefCounted
 ## the visible board. Cell value 0 is empty; any other value is a piece id.
 
 const WIDTH: int = 10
-const VISIBLE_ROWS: int = 20
+const VISIBLE_ROWS: int = 24
 const HIDDEN_ROWS: int = 20
 const TOTAL_ROWS: int = VISIBLE_ROWS + HIDDEN_ROWS
 const EMPTY: int = 0

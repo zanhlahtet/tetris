@@ -94,7 +94,7 @@ func test_walls_and_floor_count_as_occupied() -> void:
 	# Nub pointing up (0) on the floor: bottom corners are below the board.
 	var floor_board := Board.new()
 	var q := _piece(0)
-	q.origin = Vector2i(3, 38)  # centre row 39; bottom corners at row 40
+	q.origin = Vector2i(3, Board.TOTAL_ROWS - 2)  # centre on the floor row; bottom corners below it
 	floor_board.set_cell(q.origin.x, q.origin.y, 1)
 	t.check_eq(TSpin.detect(floor_board, q), MINI, "floor back corners + one front")
 

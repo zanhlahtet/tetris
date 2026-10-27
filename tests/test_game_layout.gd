@@ -61,12 +61,55 @@ func test_board_is_the_visual_focus() -> void:
 		t.check_eq(l.board_rect.size, Vector2(Board.WIDTH, Board.VISIBLE_ROWS) * l.cell_size, "board is whole cells")
 		var area := l.board_rect.get_area()
 		for name in ["hold", "stats", "next", "pause"]:
-			t.check(area > 4.0 * (_named_rects(l)[name] as Rect2).get_area(), "board dominates %s in %s" % [name, safe])
+			# 3x (was 4x for the 20-row board): the 24-row board is narrower on short screens.
+			t.check(area > 3.0 * (_named_rects(l)[name] as Rect2).get_area(), "board dominates %s in %s" % [name, safe])
 
 
 func test_base_resolution_cell_size() -> void:
 	var l := GameLayout.compute(Rect2(0, 0, 720, 1280))
-	t.check_eq(l.cell_size, 48, "48px cells at 720x1280")
+	t.check_eq(l.cell_size, 40, "40px cells at 720x1280")
+	t.check_eq(l.board_rect.size, Vector2(400, 960), "10 x 24 cells")
+
+
+func test_board_is_24_rows_tall() -> void:
+	t.check_eq(Board.VISIBLE_ROWS, 24, "24 visible rows")
+	for safe in _safe_rects():
+		var l := GameLayout.compute(safe)
+		t.check_eq(int(l.board_rect.size.y) / l.cell_size, 24, "24 rows drawn in %s" % safe)
+		t.check_eq(int(l.board_rect.size.x) / l.cell_size, 10, "10 columns drawn in %s" % safe)
+
+
+func test_board_hugs_the_top_of_the_safe_area() -> void:
+	for safe in _safe_rects():
+		var l := GameLayout.compute(safe)
+		t.check(absf(l.board_rect.position.y - (safe.position.y + GameLayout.TOP_MARGIN)) <= 1.0, "board starts at the top margin in %s: %s" % [safe, l.board_rect.position.y])
+
+
+func test_board_and_controller_separate_on_short_and_tall_iphones() -> void:
+	# Viewport-space safe areas for short, standard and tall iPhone shapes.
+	var phones: Array[Rect2] = [Rect2(0, 0, 720, 1280), Rect2(0, 48, 720, 1430), Rect2(0, 54, 720, 1578), Rect2(0, 62, 720, 1650)]
+	for safe in phones:
+		var l := GameLayout.compute(safe, false)
+		t.check(safe.encloses(l.board_rect), "board inside the safe area %s" % safe)
+		t.check(l.board_rect.end.y + GameLayout.GAP <= l.controls_rect.position.y + 0.01, "gap between board and controller in %s" % safe)
+		t.check(safe.encloses(l.controls_rect), "controller inside the safe area %s" % safe)
+		t.check(l.cell_size >= MIN_CELL, "cells stay playable in %s: %d" % [safe, l.cell_size])
+		t.check_eq(l.board_rect.size, Vector2(Board.WIDTH, Board.VISIBLE_ROWS) * l.cell_size, "uniform cells, no cropping in %s" % safe)
+
+
+func test_side_columns_stay_above_the_controller() -> void:
+	for safe in _safe_rects():
+		for hold in [true, false]:
+			var l := GameLayout.compute(safe, hold)
+			t.check(l.award_rect.end.y <= l.controls_rect.position.y, "award text clears the controller in %s hold=%s" % [safe, hold])
+			t.check(l.next_rect.end.y <= l.controls_rect.position.y, "next preview clears the controller in %s" % safe)
+
+
+func test_short_screens_shrink_cells_uniformly() -> void:
+	var tall := GameLayout.compute(Rect2(0, 0, 720, 1280))
+	var short := GameLayout.compute(Rect2(0, 0, 720, 1100))
+	t.check(short.cell_size < tall.cell_size, "shorter screen gets smaller cells")
+	t.check_eq(short.board_rect.size.x / 10.0, short.board_rect.size.y / 24.0, "cells stay square")
 
 
 func test_board_centered_horizontally() -> void:
@@ -85,9 +128,12 @@ func test_touch_targets_are_large_enough() -> void:
 
 func test_all_actions_have_buttons() -> void:
 	var l := GameLayout.compute(Rect2(0, 0, 720, 1280))
-	for action in [&"move_left", &"move_right", &"soft_drop", &"rotate_cw", &"rotate_ccw", &"pause"]:
+	for action in [&"move_left", &"move_right", &"soft_drop", &"rotate_ccw", &"pause"]:
 		t.check(l.buttons.has(action), "button for %s" % action)
 		t.check(InputMap.has_action(action), "%s is an Input Map action" % action)
+	t.check_eq(l.buttons.size(), 5, "no other touch buttons")
+	t.check(not l.buttons.has(&"rotate_cw"), "no O button")
+	t.check(InputMap.has_action(&"rotate_cw"), "clockwise stays a keyboard action")
 
 
 func test_controls_sit_below_the_board_and_split_by_hand() -> void:

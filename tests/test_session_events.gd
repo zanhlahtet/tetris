@@ -62,7 +62,7 @@ func test_hold_event() -> void:
 func test_hard_drop_event_order() -> void:
 	var s := _session()
 	s.hard_drop()
-	t.check_eq(_log, [["hard_dropped", 19, 4], "locked"], "drop reported before lock")
+	t.check_eq(_log, [["hard_dropped", Board.TOTAL_ROWS - 2 - 19, 4], "locked"], "drop reported before lock")
 
 
 func test_natural_lock_emits_locked_only() -> void:
@@ -76,11 +76,11 @@ func test_line_clear_event_carries_the_rows() -> void:
 	var s := _session()
 	for x in range(Board.WIDTH):
 		if x != 4 and x != 5:
-			s.board.set_cell(x, 38, 1)
-			s.board.set_cell(x, 39, 1)
+			s.board.set_cell(x, Board.TOTAL_ROWS - 2, 1)
+			s.board.set_cell(x, Board.TOTAL_ROWS - 1, 1)
 	s.board.set_cell(0, 30, 7)
 	s.hard_drop()
-	t.check_eq(_log, [["hard_dropped", 19, 4], "locked", ["lines_cleared", [38, 39] as Array[int]]], "rows reported")
+	t.check_eq(_log, [["hard_dropped", Board.TOTAL_ROWS - 2 - 19, 4], "locked", ["lines_cleared", [Board.TOTAL_ROWS - 2, Board.TOTAL_ROWS - 1] as Array[int]]], "rows reported")
 
 
 func test_game_ended_emitted_once() -> void:

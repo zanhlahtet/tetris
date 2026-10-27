@@ -20,14 +20,14 @@ Strict layering; dependencies point down only.
 Rules:
 - Logic and session code must not reference Nodes, scenes, `Input`, or rendering.
 - Grid coordinates are integers; x right, y down; row 0 is the top of the
-  hidden buffer (`Board.HIDDEN_ROWS` = 20 hidden rows above 20 visible).
+  hidden buffer (`Board.HIDDEN_ROWS` = 20 hidden rows above 24 visible, 44 total).
 - No physics engine; collisions are grid lookups.
 - Base resolution 720x1280, stretch `canvas_items`, aspect `expand`: taller or
   wider screens get extra viewport, never letterboxing. `GameLayout.compute(safe_rect)`
   (pure, tested) places every element from the usable area; `scenes/main.gd`
   feeds it the platform safe area on phones and re-applies on resize.
 - Touch: `TouchControls` hit-tests raw `InputEventScreenTouch/Drag` (GUI Buttons
-  only route one pointer) and emits `action_changed`; `ControllerSkin` (pure drawing helpers) paints the controller look (D-pad, X/O face buttons, PAUSE; no HOLD/DROP buttons, those are keyboard-only); `main.gd` turns that into
+  only route one pointer) and emits `action_changed`; `ControllerSkin` (pure drawing helpers) paints the controller look (D-pad, one large X button = `rotate_ccw`, PAUSE; no O/HOLD/DROP buttons, those are keyboard-only); `main.gd` turns that into
   `InputEventAction`s, so touch and keyboard share `InputHandler`. It must never
   reference the session or board. Desktop emulates touch from the mouse.
 - Pause/Game Over screens are `Overlay` (GUI buttons); `GameSession.paused`

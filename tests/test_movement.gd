@@ -105,8 +105,8 @@ func test_hard_drop_locks_at_lowest_position() -> void:
 	var next_type: int = s.queue[0]
 	s.hard_drop()
 	for x in [4, 5]:
-		t.check_eq(s.board.get_cell(x, 38), Tetromino.Type.O, "bottom row locked")
-		t.check_eq(s.board.get_cell(x, 39), Tetromino.Type.O, "floor row locked")
+		t.check_eq(s.board.get_cell(x, Board.TOTAL_ROWS - 2), Tetromino.Type.O, "bottom row locked")
+		t.check_eq(s.board.get_cell(x, Board.TOTAL_ROWS - 1), Tetromino.Type.O, "floor row locked")
 	t.check_eq(s.active.type, next_type, "next piece spawned")
 	t.check_eq(s.active.origin, Tetromino.spawn_origin(), "at spawn")
 
@@ -127,7 +127,7 @@ func test_lock_delay_500ms() -> void:
 	t.check(s.active == piece, "still active at 499ms")
 	s.tick(1)
 	t.check(s.active != piece, "locked at 500ms")
-	t.check_eq(s.board.get_cell(4, 39), Tetromino.Type.O, "cells written to board")
+	t.check_eq(s.board.get_cell(4, Board.TOTAL_ROWS - 1), Tetromino.Type.O, "cells written to board")
 
 
 func test_lock_timer_starts_on_landing() -> void:

@@ -144,20 +144,20 @@ func test_i_wall_kick_right() -> void:
 
 
 func test_floor_kick() -> void:
-	# Flat T on the floor (rows 38-39) rotated cw: the plain result needs row 40,
-	# test 3 (-1, +1 up) = (-1, -1) lifts it to rows 37-39.
-	var s := _session(Tetromino.Type.T, 0, Vector2i(3, 38))
+	# Flat T on the floor (the last two rows) rotated cw: the plain result needs a
+	# row below the floor, test 3 (-1, +1 up) = (-1, -1) lifts it one row.
+	var s := _session(Tetromino.Type.T, 0, Vector2i(3, Board.TOTAL_ROWS - 2))
 	t.check(s.rotate_cw(), "floor kick")
-	t.check_eq(s.active.origin, Vector2i(2, 37), "left one, up one")
+	t.check_eq(s.active.origin, Vector2i(2, Board.TOTAL_ROWS - 3), "left one, up one")
 	t.check(s.board.can_place(s.active.cells()), "legal")
 
 
 func test_i_floor_kick() -> void:
-	# Flat I on the floor (row 39) rotated cw: plain, tests 2-4 all need rows
-	# below the floor; test 5 (+1 right, 2 up) stands it in column 6, rows 36-39.
-	var s := _session(Tetromino.Type.I, 0, Vector2i(3, 38))
+	# Flat I on the floor row rotated cw: plain, tests 2-4 all need rows below
+	# the floor; test 5 (+1 right, 2 up) stands it in column 6 on the last 4 rows.
+	var s := _session(Tetromino.Type.I, 0, Vector2i(3, Board.TOTAL_ROWS - 2))
 	t.check(s.rotate_cw(), "floor kick")
-	t.check_eq(s.active.origin, Vector2i(4, 36), "test 5")
+	t.check_eq(s.active.origin, Vector2i(4, Board.TOTAL_ROWS - 4), "test 5")
 	t.check(s.board.can_place(s.active.cells()), "legal")
 
 
@@ -235,14 +235,14 @@ func test_rotation_never_overlaps_or_leaves_board() -> void:
 	for type in KICK_TYPES:
 		for rotation in range(4):
 			for x in range(-2, 9):
-				for y in [18, 30, 36, 37, 38]:
+				for y in [18, 30, Board.TOTAL_ROWS - 4, Board.TOTAL_ROWS - 3, Board.TOTAL_ROWS - 2]:
 					for step in [1, -1]:
 						var s := _session(type, rotation, Vector2i(x, y))
 						if not s.board.can_place(s.active.cells()):
 							continue
 						for cx in range(Board.WIDTH):
 							if cx % 3 != 0:
-								s.board.set_cell(cx, 39, 1)
+								s.board.set_cell(cx, Board.TOTAL_ROWS - 1, 1)
 						if not s.board.can_place(s.active.cells()):
 							continue
 						var ok := s.rotate_cw() if step == 1 else s.rotate_ccw()
@@ -255,7 +255,7 @@ func test_rotation_never_overlaps_or_leaves_board() -> void:
 # --- lock delay integration ---------------------------------------------
 
 func test_rotation_resets_lock_timer() -> void:
-	var s := _session(Tetromino.Type.T, 0, Vector2i(3, 38))
+	var s := _session(Tetromino.Type.T, 0, Vector2i(3, Board.TOTAL_ROWS - 2))
 	var piece := s.active
 	s.tick(400)
 	t.check(s.rotate_cw(), "rotates")
@@ -273,7 +273,7 @@ func _sink(s: GameSession) -> void:
 
 
 func test_rotation_reset_cap() -> void:
-	var s := _session(Tetromino.Type.T, 0, Vector2i(3, 38))
+	var s := _session(Tetromino.Type.T, 0, Vector2i(3, Board.TOTAL_ROWS - 2))
 	var piece := s.active
 	var guard := 0
 	while s.lock_resets < GameSession.MAX_LOCK_RESETS and guard < 100:
@@ -308,8 +308,8 @@ func test_airborne_rotation_costs_no_reset() -> void:
 
 
 func test_failed_rotation_does_not_reset_timer() -> void:
-	var s := _session(Tetromino.Type.T, 0, Vector2i(3, 38))
-	_fill_around_piece(s, 0)  # hole so locking can't clear 40 rows
+	var s := _session(Tetromino.Type.T, 0, Vector2i(3, Board.TOTAL_ROWS - 2))
+	_fill_around_piece(s, 0)  # hole so locking can't clear rows
 	var piece := s.active
 	s.tick(400)
 	t.check(not s.rotate_cw(), "blocked")
@@ -319,7 +319,7 @@ func test_failed_rotation_does_not_reset_timer() -> void:
 
 
 func test_o_rotation_does_not_reset_timer() -> void:
-	var s := _session(Tetromino.Type.O, 0, Vector2i(3, 38))
+	var s := _session(Tetromino.Type.O, 0, Vector2i(3, Board.TOTAL_ROWS - 2))
 	var piece := s.active
 	s.tick(400)
 	s.rotate_cw()
@@ -348,7 +348,7 @@ func test_horizontal_movement_uses_rotated_shape() -> void:
 func test_hard_drop_after_rotation_locks_rotated_cells() -> void:
 	var s := _session(Tetromino.Type.I, 1, Vector2i(3, 10))
 	s.hard_drop()
-	for y in range(36, 40):
+	for y in range(Board.TOTAL_ROWS - 4, Board.TOTAL_ROWS):
 		t.check_eq(s.board.get_cell(5, y), Tetromino.Type.I, "column 5 row %d" % y)
 
 

@@ -6,8 +6,8 @@ var t: Object
 const EXPECTED: Array = [
 	[0, 1000], [1249, 1000], [1250, 850], [3749, 850], [3750, 700], [7499, 700],
 	[7500, 550], [12499, 550], [12500, 430], [18749, 430], [18750, 340], [27499, 340],
-	[27500, 270], [37499, 270], [37500, 220], [49999, 220], [50000, 180], [68749, 180],
-	[68750, 150], [93749, 150], [93750, 120], [93751, 120], [1000000, 120],
+	[27500, 270], [37499, 270], [37500, 240], [49999, 240], [50000, 210], [68749, 210],
+	[68750, 190], [93749, 190], [93750, 170], [93751, 170], [1000000, 170],
 ]
 
 
@@ -73,7 +73,7 @@ func test_level_still_follows_lines() -> void:
 func test_restart_resets_difficulty() -> void:
 	var s := _session()
 	s.stats.score = 100000
-	t.check_eq(s.gravity_interval_ms(), 120, "fast")
+	t.check_eq(s.gravity_interval_ms(), 170, "fast")
 	s.restart(1, true)
 	t.check_eq(s.gravity_interval_ms(), 1000, "restart returns to the start speed")
 	var y0: int = s.active.origin.y
@@ -111,11 +111,12 @@ func test_fall_is_frame_rate_independent_at_each_speed() -> void:
 		t.check_eq(results[0], 2160 / Gravity.interval_for_score(score), "score %d: rows = time / interval" % score)
 
 
-func test_speed_never_exceeds_one_row_per_120ms() -> void:
+func test_speed_never_exceeds_one_row_per_170ms() -> void:
+	t.check_eq(Gravity.MIN_INTERVAL_MS, 170, "cap is 170 ms per row")
 	var s := _session()
 	s.stats.score = 5000000
-	t.check_eq(_rows_fallen(s, 1199, 1), 9, "9 rows in 1199 ms")
-	t.check_eq(_rows_fallen(s, 1, 1), 1, "10th row at 1200 ms")
+	t.check_eq(_rows_fallen(s, 1699, 1), 9, "9 rows in 1699 ms")
+	t.check_eq(_rows_fallen(s, 1, 1), 1, "10th row at 1700 ms")
 
 
 func test_soft_drop_at_max_speed() -> void:
@@ -123,11 +124,11 @@ func test_soft_drop_at_max_speed() -> void:
 	s.stats.score = 93750
 	s.set_soft_drop(true)
 	var y0: int = s.active.origin.y
-	s.tick(60)
-	t.check_eq(s.active.origin.y - y0, 10, "20x faster than 120 ms = 6 ms per row")
+	s.tick(80)
+	t.check_eq(s.active.origin.y - y0, 10, "20x faster than 170 ms = 8 ms per row (integer ms)")
 	s.set_soft_drop(false)
 	var y1: int = s.active.origin.y
-	s.tick(119)
+	s.tick(169)
 	t.check_eq(s.active.origin.y, y1, "back to normal speed on release")
 
 
@@ -152,18 +153,18 @@ func test_one_big_score_crosses_several_thresholds_without_a_burst() -> void:
 	s.stats.score = 100000
 	s.tick(0)
 	t.check_eq(s.active.origin.y, y0, "no burst of rows")
-	t.check_eq(s.gravity_interval_ms(), 120, "jumped straight to the cap")
-	s.tick(11)
-	t.check_eq(s.active.origin.y, y0, "progress scaled to 108 of 120 ms")
+	t.check_eq(s.gravity_interval_ms(), 170, "jumped straight to the cap")
+	s.tick(16)
+	t.check_eq(s.active.origin.y, y0, "progress scaled to 153 of 170 ms")
 	s.tick(1)
-	t.check_eq(s.active.origin.y, y0 + 1, "completes after a total of 120 ms-equivalent")
+	t.check_eq(s.active.origin.y, y0 + 1, "completes after a total of 170 ms-equivalent")
 
 
 func test_hard_drop_points_count_towards_thresholds() -> void:
 	var s := _session()
 	s.stats.score = 1230
 	s.active.origin = Vector2i(3, 19)
-	s.hard_drop()  # 19 cells * 2 points = 38
+	s.hard_drop()  # a long drop, at 2 points per cell
 	t.check(s.stats.score >= 1250, "score crossed 1250")
 	t.check_eq(s.gravity_interval_ms(), 850, "gravity followed")
 
